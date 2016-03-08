@@ -1,0 +1,26 @@
+{
+  "name": "unique-server",
+  "version": "0.1.0",
+  "description": "Server app for processing unique IQ data from browser extention",
+  "main": "uniqueServer.js",
+  "scripts": {
+    "start": "node uniqueServer.js"
+  },
+  "engines": {
+    "node": "0.12.7"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/heroku/unique-server"
+  },
+  "keywords": [
+    "node",
+    "heroku",
+    "express"
+  ],
+  "author": "Colin Willson",
+  "license": "ISC",
+  "dependencies": {
+    "firebase": "^2.4.1"
+  }
+}

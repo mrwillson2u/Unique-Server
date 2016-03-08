@@ -44,7 +44,6 @@ var uploadBuffer = {};
 var downloadBuffer = [];
 var urlCount = 0;
 
-var processCounter0 = 0;
 var processCounter = 0;
 var processCounter1 = 0;
 var processCounter2 = 0;
@@ -56,104 +55,46 @@ var processCounter3 = 0;
 //
 //
 // .orderByChild('Processed').equalTo(false).once
-console.log('test');
 
-
-ref.child("users").on("child_added", function(user) {
-
-  console.log("new user!" + user.key());
-  console.log(user.val());
-
-  ref.child("users/" + user.key() + "/URLS").on("child_added", function(site) {
-    console.log("new website!" + site.key());
-    console.log(site.val());
-    // processor(user);
-  });
-
-});
-
-//
-// ref.once("child_changed", function(user) {
-//   console.log(user.val());
-//   user.forEach(processor);
-// })
-
-
-
-//
-// , function(error) {
-//   if (error) {
-//     alert("Data could not be saved." + error);
-//   } else {
-//     alert("Data saved successfully.");
-//     ref.on("child_changed", function(user) {
-//       user.forEach(processor);
-//     });
-//   }
-// });
+ref.child('users').on("child_changed", function(user) {
+ //  console.log("String: ");
+ // console.log(user.val());
+  // ref.child('users').off("value", processURLS);
+  // var temp = snapshot.val();
 
 
 
   // For each user
   // snapshot.forEach(function(user) {
-    // downloadBuffer = users.val();
-    //
-    //
-    //
-    //
-    // console.log('downloadBuffer: ');
-    // console.log(downloadBuffer);
-    // urlCount = user.child('URLS').numChildren();
-    // console.log('urlCount' + urlCount);
-    // console.log(user.child('URLS').key());
-    // console.log(ref.child("users/" + user.key() + '/URLS').toString());
-function processor(user) {
-  console.log("user: ");
-  console.log(user.key());
-  var userString = ref.child('users/' + user.key());
-  console.log('userString');
-  console.log(user.val());
-    // var url = site.child("URL");
-    // console.log("url: ");
-    // console.log(url.val());
-    // console.log('userString');
-    // console.log(userString.child('URLS').toString());
+    downloadBuffer = user.val();
+console.log('user.key()');
+    console.log(user.key());
 
-
-    userString.child('URLS').orderByChild('Processed').equalTo("no").once("value", function(site) {
-      // console.log("users/" + user.key() + '/URLS');
-      console.log("hasChildren: ");
-      console.log(site.hasChildren());
+    console.log('downloadBuffer: ');
+    console.log(downloadBuffer);
+    urlCount = user.child('URLS').numChildren();
+    console.log('urlCount' + urlCount);
+    console.log(user.child('URLS').key());
+    ref.child("users/" + user.key() + '/URLS').orderByChild('Processed').equalTo(false).once("value", function(site) {
+console.log("site: ");
+      console.log(site.val());
       site.forEach(function(url) {
-        // console.log("key: " + url.key());
+        console.log("key: " + url.key());
         // console.log("url: " + url.val().URL);
         // console.log("yep");
         // console.log('processed: ' + url.val().Processed);
-        console.log('url.val()');
-        console.log(url.val());
-        if(url.val().Processed === 'no') {
-
-
-          // console.log('userString.child("URLS/" + url.key() + "/Processed")::');
-          // console.log(userString.child("URLS/" + url.key() + "/Processed").toString());
-
-          userString.child("URLS/" + url.key()).update({Processed: "in progress"});
-
-
-          processCounter0++;
-          console.log("processCounter0: " + processCounter0);
+        if(url.val().Processed === false) {
           // console.log("Processing url: " + url.val().URL);
           jsdom.env(url.val().URL, ["http://code.jquery.com/jquery.js"], function (err, window) {
             //logger.log('processing!' + url.val().URL);
             // free memory associated with the window
 
             processCounter++;
-            // console.log("processCounter: " + processCounter);
-
+            console.log("processCounter: " + processCounter);
             if (!err) {
               //console.log("Title: " + window.$('title').text());
               // console.log('getKeyWords');
-              var content = getKeyWords(window, user, userString.child("URLS/" + url.key()));
+              var content = getKeyWords(window, user, 'users/' + user.key() + '/URLS/' + url.key());
               //var result = processResults(content);
               //console.log('users/' + user.key() + '/URLS/' + url.key() + '/keyWords');
 
@@ -169,8 +110,10 @@ function processor(user) {
         }
       });
     });
-}
+  // });
+    // console.log("url: " + url.val().URL);
 
+});
 
 // ref.on("child_added", function(snapshot){
 //   console.log(snapshot.val());
@@ -258,12 +201,10 @@ function parseText(input, user, setString) {
           for(j in result) {
             if(result[j][1] === "NN" || result[j][1] === "NNP" || result[j][1] === "NNPS" || result[j][1] === "NNS" ) {
               //console.log("--->" + result[j][0] + "  |  " + result[j][1]) + "<---";
-              var lowerCase = result[j][0].toLowerCase();
-              var stemmed = natural.PorterStemmer.stem(lowerCase);
-              keyWords.push(stemmed);
-              // for(k in keyWords) {
-              //   //console.log('setting: ' + keyWords.length);
-              // }
+              keyWords.push(result[j][0]);
+              for(k in keyWords) {
+                //console.log('setting: ' + keyWords.length);
+              }
 
               //console.log('setString: ' + setString);
 
@@ -327,7 +268,6 @@ function countKeyWords(input, user, setString) {
   // console.log('size: ' + rank.length);
 
   // Reorder the words (objects) in the array so that they are ordered from highest to lowest count
-
   if(rank.length > 1) {
     var orderedRank = [rank[0]];
 
@@ -365,21 +305,20 @@ function countKeyWords(input, user, setString) {
       output[i] = orderedRank[i];
     }
 // console.log('orderedRank:  ' + orderedRank);
-    // var refString = new Firebase(setString);
 
     console.log('updating:  ' + setString + ' size: ' + orderedRank.length);
-    setString.update({
+    ref.child(setString).update({
       keyWords: output,
-      Processed: 'yes'
+      Processed: true
     }, updateCallback);
-    // uploadBuffer[setString] = {keyWords: output, Processed: 'true'};
+    uploadBuffer[setString] = {keyWords: output, Processed: true};
   } else {
-    setString.update({
-      Processed: 'yes'
+    ref.child(setString).update({
+      Processed: true
     }, updateCallback);
-    // uploadBuffer[setString] = {Processed: 'true'};
+    uploadBuffer[setString] = {Processed: true};
   }
-
+  urlCount--;
 
   // uploadObject[setString] =
   console.log("urlCount: " + urlCount);
@@ -393,7 +332,7 @@ function countKeyWords(input, user, setString) {
 function updateCallback(error) {
 
     // ref.child('users').on("value", processURLS);
-urlCount--;
+
 }
 
 // Helper method to parse the title tag from the response.
