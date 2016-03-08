@@ -1,6 +1,3 @@
-
-
-
 // Fires as soon as all the content has loaded
 // document.addEventListener('DOMContentLoaded', function() {
 // var express = require('express')
@@ -50,6 +47,9 @@ var processCounter1 = 0;
 var processCounter2 = 0;
 var processCounter3 = 0;
 
+var currentlyProccessing = false;
+var processingQue = 0
+
 // ref.child('users').on("child_changed", function(snapshot) {
 //   snapshot.
 // }
@@ -61,16 +61,20 @@ console.log('test');
 
 ref.child("users").on("child_added", function(user) {
 
-  console.log("new user!" + user.key());
-  console.log(user.val());
-
+  // Start an envent listener waiting for wensires to be added to the new user
   ref.child("users/" + user.key() + "/URLS").on("child_added", function(site) {
-    console.log("new website!" + site.key());
-    console.log(site.val());
-    // processor(user);
+    // console.log("new website!" + site.key());
+    // console.log(site.val());
+    while(processingQue >= 20) {
+      // Wait for others to finish processing before proceding
+    }
+
+     processor(user.key(), site);
   });
 
 });
+
+
 
 //
 // ref.once("child_changed", function(user) {
@@ -107,78 +111,39 @@ ref.child("users").on("child_added", function(user) {
     // console.log('urlCount' + urlCount);
     // console.log(user.child('URLS').key());
     // console.log(ref.child("users/" + user.key() + '/URLS').toString());
-function processor(user) {
-  console.log("user: ");
-  console.log(user.key());
-  var userString = ref.child('users/' + user.key());
-  console.log('userString');
-  console.log(user.val());
-    // var url = site.child("URL");
-    // console.log("url: ");
-    // console.log(url.val());
-    // console.log('userString');
-    // console.log(userString.child('URLS').toString());
+function processor(userKey, site) {
 
+  console.log('user');
+  console.log(userKey);
 
-    userString.child('URLS').orderByChild('Processed').equalTo("no").once("value", function(site) {
-      // console.log("users/" + user.key() + '/URLS');
-      console.log("hasChildren: ");
-      console.log(site.hasChildren());
-      site.forEach(function(url) {
-        // console.log("key: " + url.key());
-        // console.log("url: " + url.val().URL);
-        // console.log("yep");
-        // console.log('processed: ' + url.val().Processed);
-        console.log('url.val()');
-        console.log(url.val());
-        if(url.val().Processed === 'no') {
+    var url = site.child('URL');
 
+    if(site.val().Processed === "no") {
+      processingQue++;
+      console.log('processingQue: ' + processingQue);
+      var userString = ref.child('users/' + userKey);
+      // userString.child("URLS/" + site.key()).update({Processed: "in progress"});
+      // console.log("Processing url: " + url.val().URL);
 
-          // console.log('userString.child("URLS/" + url.key() + "/Processed")::');
-          // console.log(userString.child("URLS/" + url.key() + "/Processed").toString());
+      jsdom.env(url.val(), ["http://code.jquery.com/jquery.js"], function (err, window) {
+        console.log('processing1!' +userString.child("URLS/" + site.key()));
+        // free memory associated with the window
 
-          userString.child("URLS/" + url.key()).update({Processed: "in progress"});
+        if (!err) {
+          var content = getKeyWords(window, userKey, userString.child("URLS/" + site.key()));
 
-
-          processCounter0++;
-          console.log("processCounter0: " + processCounter0);
-          // console.log("Processing url: " + url.val().URL);
-          jsdom.env(url.val().URL, ["http://code.jquery.com/jquery.js"], function (err, window) {
-            //logger.log('processing!' + url.val().URL);
-            // free memory associated with the window
-
-            processCounter++;
-            // console.log("processCounter: " + processCounter);
-
-            if (!err) {
-              //console.log("Title: " + window.$('title').text());
-              // console.log('getKeyWords');
-              var content = getKeyWords(window, user, userString.child("URLS/" + url.key()));
-              //var result = processResults(content);
-              //console.log('users/' + user.key() + '/URLS/' + url.key() + '/keyWords');
-
-              // ref.child('users/' + user.key() + '/URLS/' + url.key()).set({keyWords: content});
-
-            }
-          });
         } else {
-          // console.log('Already procesed!');
-          console.log('Already procesed!' + url.val().URL);
-          // urlCount--;
-          console.log("count: " + urlCount);
+            console.log("error: " + err);
         }
       });
-    });
+    } else {
+      // console.log('Already procesed!');
+      console.log('Already procesed!' + url.val());
+
+    }
+
+
 }
-
-
-// ref.on("child_added", function(snapshot){
-//   console.log(snapshot.val());
-// });
-
-
-
-
 
 // Helper method to parse the title tag from the response.
 function getTitle(text) {
@@ -187,6 +152,7 @@ function getTitle(text) {
 
 // Get all of the valuable content from the page
 function getKeyWords(pageHtml, user, setString) {
+  console.log('processing1!' + setString);
   var searchTags = ['title', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
   // var searchTags = ['title'];
   var importantText = [];
@@ -220,6 +186,8 @@ function getKeyWords(pageHtml, user, setString) {
 
 
 function parseText(input, user, setString) {
+  console.log('processing1!' + setString);
+
   var TfIdf = natural.TfIdf;
   var tfidf = new TfIdf();
 //console.log("This is the input: " + '"' + input[0] + '"');
@@ -260,7 +228,7 @@ function parseText(input, user, setString) {
               //console.log("--->" + result[j][0] + "  |  " + result[j][1]) + "<---";
               var lowerCase = result[j][0].toLowerCase();
               var stemmed = natural.PorterStemmer.stem(lowerCase);
-              keyWords.push(stemmed);
+              keyWords.push(lowerCase);
               // for(k in keyWords) {
               //   //console.log('setting: ' + keyWords.length);
               // }
@@ -274,12 +242,12 @@ function parseText(input, user, setString) {
         }
       }
       processCounter3++;
-      console.log("processCounter3: " + processCounter3);
-      console.log("count: " + user.val());
+      // console.log("processCounter3: " + processCounter3);
+      // console.log("count: " + user);
 
-      console.log("keywordCount: " + keyWords.length);
+      // console.log("keywordCount: " + keyWords.length);
       for(var i = 0; i < 3; i++) {
-        console.log("keywordCount" + i + ": " + keyWords[i]);
+        // console.log("keywordCount" + i + ": " + keyWords[i]);
       }
       countKeyWords(keyWords, user, setString);
     }
@@ -290,7 +258,9 @@ function parseText(input, user, setString) {
 
 
 function countKeyWords(input, user, setString) {
-  console.log('here');
+  console.log('processing3!' + setString);
+
+  // console.log('here');
   var rank = [];
   var wordList = [];
 
@@ -327,13 +297,14 @@ function countKeyWords(input, user, setString) {
   // console.log('size: ' + rank.length);
 
   // Reorder the words (objects) in the array so that they are ordered from highest to lowest count
+  console.log('processing4!' + setString);
 
   if(rank.length > 1) {
     var orderedRank = [rank[0]];
 
-      console.log('rank: ');
+      // console.log('rank: ');
     for(i in rank) {
-      console.log(rank[i]);
+      // console.log(rank[i]);
     }
     for(var i = 1; i < rank.length; i++) {
       var position = 0;
@@ -356,7 +327,7 @@ function countKeyWords(input, user, setString) {
     //uploadData(rank);
 
     for(var i = 0; i < 15 && i < orderedRank.length; i++) {
-      console.log('rank' + i + ': ' + orderedRank[i].count);
+      // console.log('rank' + i + ': ' + orderedRank[i].count);
     }
 
     var output = {};
@@ -368,12 +339,17 @@ function countKeyWords(input, user, setString) {
     // var refString = new Firebase(setString);
 
     console.log('updating:  ' + setString + ' size: ' + orderedRank.length);
+    console.log('processing5a!' + setString);
+
+
     setString.update({
       keyWords: output,
       Processed: 'yes'
     }, updateCallback);
     // uploadBuffer[setString] = {keyWords: output, Processed: 'true'};
   } else {
+    console.log('processing5b!' + setString);
+
     setString.update({
       Processed: 'yes'
     }, updateCallback);
@@ -382,12 +358,13 @@ function countKeyWords(input, user, setString) {
 
 
   // uploadObject[setString] =
-  console.log("urlCount: " + urlCount);
+  // console.log("urlCount: " + urlCount);
   // if(urlCount === 0) {
   //   console.log('uploadBuffer');
   //   console.log(uploadBuffer);
   // // return output;
   // }
+  processingQue--;
 }
 
 function updateCallback(error) {
