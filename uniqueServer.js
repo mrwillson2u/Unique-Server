@@ -31,6 +31,10 @@ require('ssl-root-cas/latest').inject();
 
 var ref = new Firebase("https://unique-iq.firebaseio.com");
 
+var userRef = ref.child('74634619-4295-4516-ac90-01383e368985');
+
+ userRef.child('atributes').set({age: 15, name: 'colin'});
+
 var uploadBuffer = {};
 var downloadBuffer = [];
 var urlCount = 0;
@@ -152,7 +156,7 @@ function processor(userKey, site, asyncBack) {
 
             // var $ = cheerio.load(body);
             // console.log(body);
-        jsdom.env(url.val(),["http://code.jquery.com/jquery.js"], function (err, window) {
+      jsdom.env(url.val(),["http://code.jquery.com/jquery.js"], function (err, window) {
 
         // free memory associated with the window
 
@@ -160,8 +164,10 @@ function processor(userKey, site, asyncBack) {
           var content = getKeyWords(window, userKey, userString.child("URLS/" + site.key()), asyncBack);
 
         } else {
-            console.log("error: " + err);
+            console.log("error: ");
+            console.log(err);
             asyncBack();
+
         }
       });
 
