@@ -68,14 +68,54 @@ console.log('test1');
 
       // Wait for others to finish processing before proceding
        processingQue++;
-
-       3
       q.push({user: user, site: site}, function() {
         console.log('Processed: ' + site.val());
 
-        // If website is updated, lets scan for similarities with other sites of the same user
-        ref.child("users/" + user.key() + "/URLS").on("child_changed", function(site) {
+        ref.child("users/" + user.key() + "/URLS").orderByChild('Processed').equalTo('yes').once("value", function(otherSites) {
+          // var otherSites = snap.val();
 
+          console.log("comparing!!");
+          otherSites.forEach(function(otherSnap) {
+            var site1 = site.val();
+            var site2 = otherSnap.val();
+            var alreadyCompared = false;
+
+            var machedWords = [];
+
+            // console.log('site1.Comparisons');
+            // console.log(site1);
+
+            if(site1.keyWords !== undefined && site.key() !== otherSnap.key()) {
+              // Chech if either sites have been compared to anything yet
+              if(site1.Comparisons !== undefined && site2.Comparisons !== undefined) {
+
+                for(i in site1.Comparisons) {
+                  if(site1.Comparisons[i].URL === site2.URL) {
+                    // console.log("already compared!");
+                    alreadyCompared = true;
+                  }
+                }
+              }
+
+              if(!alreadyCompared) {
+                var likeness = compareSites(site1, site2);
+                if(likeness.likeness > 0) {
+                  ref.child("users/" + user.key() + "/Trends").push({URLS: {0: site1.URL, 1: site2.URL}, likeness: likeness.likeness, words: likeness.words})
+                }
+                // Update comparisons on both sites
+                // ref.child("users/" + user.key() + "/URLS/" + site.key() + "/Comparisons").push({key: otherSnap.key(), URL: otherSnap.val().URL, Likeness: likeness});
+                //
+                // ref.child("users/" + user.key() + "/URLS/" + otherSnap.key() + "/Comparisons").push({key:site.key(), URL: site.val().URL, Likeness: likeness});
+
+              }
+            }
+            // var likeness = compareSites(site, otherSite);
+            // pdate comparisons on both sites
+            // ref.child("users/" + user.key() + "/URLS/" + site.key() + "/Comparisons").set((otherSite.key(): otherSite.val().URL, Likeness: likeness});
+            //
+            // ref.child("users/" + user.key() + "/URLS/" + otherSite.key() + "/Comparisons").set(site.key(): otherSite.val().URL, Likeness: likeness});
+
+          });
         });
       });
 
@@ -342,4 +382,28 @@ function countKeyWords(input, user, setString, asyncBack) {
   // Site is done processing so we can remove it from the count
   processingQue--;
   asyncBack();
+}
+
+
+function compareSites(site1, site2) {
+  var matchedWords = {likeness: 0, words: []};
+
+  console.log("site1");
+  console.log(site1.keyWords);
+  console.log("site2");
+  console.log(site2.keyWords);
+  for(i in site1.keyWords) {
+    for(j in site2.keyWords) {
+      if(site1.keyWords[i].word === site2.keyWords[j].word) {
+        console.log('word match!!');
+
+        var val = (site1.keyWords[i].importance/2) +(site2.keyWords[j].importance/2);
+        matchedWords.likeness += val;
+        matchedWords.words.push({word: site1.keyWords[i].word, importance:  val})
+      }
+    }
+  }
+
+  console.log("likeness: " + matchedWords.likeness);
+  return matchedWords;
 }
