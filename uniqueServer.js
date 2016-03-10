@@ -69,13 +69,23 @@ console.log('test1');
       // Wait for others to finish processing before proceding
        processingQue++;
 
+       3
       q.push({user: user, site: site}, function() {
         console.log('Processed: ' + site.val());
+
+        // If website is updated, lets scan for similarities with other sites of the same user
+        ref.child("users/" + user.key() + "/URLS").on("child_changed", function(site) {
+
+        });
       });
 
   });
 
 });
+
+
+
+
 
 
 
@@ -280,15 +290,26 @@ function countKeyWords(input, user, setString, asyncBack) {
     for(var i = 1; i < rank.length; i++) {
       var position = 0;
 
-       for(j in orderedRank) {
-         position = j;
+       for(var j = 0; j < orderedRank.length; j++) {
+         position = j+1;
          if(rank[i].count > orderedRank[j].count) {
+           position--;
            break;
          }
        }
+
       orderedRank.splice(position, 0, rank[i]);
 
     }
+
+    var totalCount = 0;
+    for(i in orderedRank) {
+      totalCount += orderedRank[i].count;
+    }
+    for(i in orderedRank) {
+      orderedRank[i].importance = orderedRank[i].count/totalCount*100;;
+    }
+
 
     var output = {};
     // Convert the array to an object because Friebase prefers it that way
@@ -308,7 +329,6 @@ function countKeyWords(input, user, setString, asyncBack) {
     outputObject = {Processed: 'yes'};
 
   }
-  console.log('uploading NOW!!!');
   // Upload to Firebase
   setString.update(outputObject, function(error) {
     console.log("Updating: " + setString);
