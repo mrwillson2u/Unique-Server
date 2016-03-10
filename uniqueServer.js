@@ -31,9 +31,6 @@ require('ssl-root-cas/latest').inject();
 
 var ref = new Firebase("https://unique-iq.firebaseio.com");
 
-var userRef = ref.child('74634619-4295-4516-ac90-01383e368985');
-
- userRef.child('atributes').set({age: 15, name: 'colin'});
 
 var uploadBuffer = {};
 var downloadBuffer = [];
@@ -124,7 +121,7 @@ function processor(userKey, site, asyncBack) {
 
     var url = site.child('URL');
 
-    if(site.val().Processed === "no") {
+    if(site.val().Processed === "no" && !site.val().URL.endsWith('.pdf') ) {
       processingQue++;
       console.log('processingQue: ' + processingQue);
       var userString = ref.child('users/' + userKey);
@@ -137,25 +134,6 @@ function processor(userKey, site, asyncBack) {
         console.log('url: ' + url.val());
 
 
-        // download(url.val(), function(data) {
-        //   if (data) {
-        //     console.log('processing1!!!!!!!!!!!' +userString.child("URLS/" + site.key()));
-        //     //console.log(data);
-        //
-        //     // console.log(data);
-        //     // var $ = cheerio.load(data);
-        //
-        //
-        //     console.log("done");
-        //   } else {
-        //
-        //     console.log("error");
-        //   }
-        // });
-
-
-            // var $ = cheerio.load(body);
-            // console.log(body);
       jsdom.env(url.val(),["http://code.jquery.com/jquery.js"], function (err, window) {
 
         // free memory associated with the window
@@ -173,7 +151,7 @@ function processor(userKey, site, asyncBack) {
 
     } else {
       console.log('Already procesed!' + url.val());
-
+      asyncBack();
     }
 
 
@@ -333,8 +311,11 @@ function countKeyWords(input, user, setString, asyncBack) {
   console.log('uploading NOW!!!');
   // Upload to Firebase
   setString.update(outputObject, function(error) {
-    console.log('this: ');
+    console.log("Updating: " + setString);
+    if(error) {
+    console.log('update error: ');
     console.log(error);
+  }
     urlCount--;
   });
 
