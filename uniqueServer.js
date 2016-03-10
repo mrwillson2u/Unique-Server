@@ -30,8 +30,7 @@ global.XMLHttpRequest = window.XMLHttpRequest;
 require('ssl-root-cas/latest').inject();
 
 var ref = new Firebase("https://unique-iq.firebaseio.com");
-
-
+ref.set({});
 var uploadBuffer = {};
 var downloadBuffer = [];
 var urlCount = 0;
@@ -44,7 +43,7 @@ var processCounter3 = 0;
 
 var currentlyProccessing = false;
 var processingQue = 0
-
+var ignoreWords = [i, use];
 
 
 var downloading = false;
@@ -69,53 +68,77 @@ console.log('test1');
       // Wait for others to finish processing before proceding
        processingQue++;
       q.push({user: user, site: site}, function() {
-        console.log('Processed: ' + site.val());
+        console.log('Processed: ' + site.key());
 
-        ref.child("users/" + user.key() + "/URLS").orderByChild('Processed').equalTo('yes').once("value", function(otherSites) {
+        ref.child("users/" + user.key() + "/URLS" ).on("child_changed", function(changedSnap) {
           // var otherSites = snap.val();
+          console.log("CHILD CHANGED::");
+          console.log(changedSnap.val());
 
-          console.log("comparing!!");
-          otherSites.forEach(function(otherSnap) {
-            var site1 = site.val();
-            var site2 = otherSnap.val();
-            var alreadyCompared = false;
+          // console.log(changedSnap.val().Processed);
+          // console.log(changedSnap.val().keyWords);
+          if(changedSnap.val().Processed === 'yes' && changedSnap.val().keyWords !== undefined) {
+            ref.child("users/" + user.key() + "/URLS").orderByChild('Processed').equalTo('yes').once("value", function(otherSnaps) {
+              console.log("comparing!!");
 
-            var machedWords = [];
+              var trends = []
 
-            // console.log('site1.Comparisons');
-            // console.log(site1);
+              otherSnaps.forEach(function(otherSnap) {
+                var site1 = changedSnap.val();
+                var site2 = otherSnap.val();
+                var alreadyCompared = false;
 
-            if(site1.keyWords !== undefined && site.key() !== otherSnap.key()) {
-              // Chech if either sites have been compared to anything yet
-              if(site1.Comparisons !== undefined && site2.Comparisons !== undefined) {
+                var machedWords = [];
 
-                for(i in site1.Comparisons) {
-                  if(site1.Comparisons[i].URL === site2.URL) {
-                    // console.log("already compared!");
-                    alreadyCompared = true;
+                // console.log('site1.Comparisons');
+                // console.log(site1);
+
+                if(site1.keyWords !== undefined && changedSnap.key() !== otherSnap.key()) {
+                  // Chech if either sites have been compared to anything yet
+                  if(site1.Comparisons !== undefined && site2.Comparisons !== undefined) {
+
+                    for(i in site1.Comparisons) {
+                      if(site1.Comparisons[i].URL === site2.URL) {
+                        // console.log("already compared!");
+                        alreadyCompared = true;
+                      }
+                    }
                   }
-                }
-              }
 
-              if(!alreadyCompared) {
-                var likeness = compareSites(site1, site2);
-                if(likeness.likeness > 0) {
-                  ref.child("users/" + user.key() + "/Trends").push({URLS: {0: site1.URL, 1: site2.URL}, likeness: likeness.likeness, words: likeness.words})
+                  if(!alreadyCompared) {
+                    var likeness = compareSites(site1, site2);
+                    if(likeness.likeness > 25) {
+                      console.log('likeness: ' + likeness.likeness);
+
+                      // Rank from highest to lowest
+                      for(i in trends.length) {
+                        if(trends[i].likeness >= likeness.likeness) {
+                          trends.push({URLS: {0: site1.URL, 1: site2.URL}, likeness: likeness.likeness, words: likeness.words});
+                          break;
+                        }
+                      }
+                    }
+                    // Update comparisons on both sites
+                    // ref.child("users/" + user.key() + "/URLS/" + site.key() + "/Comparisons").push({key: otherSnap.key(), URL: otherSnap.val().URL, Likeness: likeness});
+                    //
+                    // ref.child("users/" + user.key() + "/URLS/" + otherSnap.key() + "/Comparisons").push({key:site.key(), URL: site.val().URL, Likeness: likeness});
+
+                  }
+
                 }
-                // Update comparisons on both sites
-                // ref.child("users/" + user.key() + "/URLS/" + site.key() + "/Comparisons").push({key: otherSnap.key(), URL: otherSnap.val().URL, Likeness: likeness});
+                // var likeness = compareSites(site, otherSite);
+                // pdate comparisons on both sites
+                // ref.child("users/" + user.key() + "/URLS/" + site.key() + "/Comparisons").set((otherSite.key(): otherSite.val().URL, Likeness: likeness});
                 //
-                // ref.child("users/" + user.key() + "/URLS/" + otherSnap.key() + "/Comparisons").push({key:site.key(), URL: site.val().URL, Likeness: likeness});
+                // ref.child("users/" + user.key() + "/URLS/" + otherSite.key() + "/Comparisons").set(site.key(): otherSite.val().URL, Likeness: likeness});
 
-              }
-            }
-            // var likeness = compareSites(site, otherSite);
-            // pdate comparisons on both sites
-            // ref.child("users/" + user.key() + "/URLS/" + site.key() + "/Comparisons").set((otherSite.key(): otherSite.val().URL, Likeness: likeness});
-            //
-            // ref.child("users/" + user.key() + "/URLS/" + otherSite.key() + "/Comparisons").set(site.key(): otherSite.val().URL, Likeness: likeness});
+              });
+
+
+              ref.child("users/" + user.key() + "/Trends").push(trends);
 
           });
+        }
         });
       });
 
@@ -136,31 +159,31 @@ console.log('test1');
 
 // Utility function that downloads a URL and invokes
 // callback with the data.
-function download(url, callback) {
-  var header;
-
-  if(url.startsWith("https")) {
-    header = https;
-  } else if (url.startsWith("http:")){
-    header = http;
-  } else {
-    return;
-  }
-
-  header.get(url, function(res) {
-    var data = "";
-    res.on('data', function (chunk) {
-      data += chunk;
-    });
-    res.on("end", function() {
-      callback(data);
-    });
-  }).on("error", function(e) {
-    console.log("http.get error: " + e);
-    callback(null);
-  });
-
-}
+// function download(url, callback) {
+//   var header;
+//
+//   if(url.startsWith("https")) {
+//     header = https;
+//   } else if (url.startsWith("http:")){
+//     header = http;
+//   } else {
+//     return;
+//   }
+//
+//   header.get(url, function(res) {
+//     var data = "";
+//     res.on('data', function (chunk) {
+//       data += chunk;
+//     });
+//     res.on("end", function() {
+//       callback(data);
+//     });
+//   }).on("error", function(e) {
+//     console.log("http.get error: " + e);
+//     callback(null);
+//   });
+//
+// }
 
 
 
@@ -263,18 +286,25 @@ function parseText(input, user, setString, asyncBack) {
             if(result[j][1] === "NN" || result[j][1] === "NNP" || result[j][1] === "NNPS" || result[j][1] === "NNS" ) {
               var lowerCase = result[j][0].toLowerCase();
               var stemmed = natural.PorterStemmer.stem(lowerCase);
-              keyWords.push(lowerCase);
 
+              // Ignore specific words which arent useful or are a single letter
+              var ignore = false;
+              for (i in ignoreWords) {
+                if(lowercase.length === 1 || lowerCase === ignoreWords[i]) {
+                  ignore = true;
+                  break;
+                }
+              }
+              if(!ignore) {
+                keyWords.push(lowerCase);
+              }
             }
           }
         }
       }
-
       countKeyWords(keyWords, user, setString, asyncBack);
     }
   });
-
-
 }
 
 
@@ -388,14 +418,9 @@ function countKeyWords(input, user, setString, asyncBack) {
 function compareSites(site1, site2) {
   var matchedWords = {likeness: 0, words: []};
 
-  console.log("site1");
-  console.log(site1.keyWords);
-  console.log("site2");
-  console.log(site2.keyWords);
   for(i in site1.keyWords) {
     for(j in site2.keyWords) {
       if(site1.keyWords[i].word === site2.keyWords[j].word) {
-        console.log('word match!!');
 
         var val = (site1.keyWords[i].importance/2) +(site2.keyWords[j].importance/2);
         matchedWords.likeness += val;
@@ -404,6 +429,6 @@ function compareSites(site1, site2) {
     }
   }
 
-  console.log("likeness: " + matchedWords.likeness);
+  // console.log("likeness: " + matchedWords.likeness);
   return matchedWords;
 }
