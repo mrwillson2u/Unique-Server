@@ -47,7 +47,25 @@ console.log('starting..');
 
 var q = async.queue(function (task, asyncBack) {
     console.log('processing' + task.site.key());
-    processor(task.user.key(), task.site, asyncBack);
+    //Check if we have processed this site already
+    console.log("checking already processed websites for: " + task.site.child('URL').val());
+    ref.child("websites").orderByChild('url').equalTo(task.site.child('URL').val()).once("value", function(processedSite) {
+      console.log("processedSite: ");
+      console.log(processedSite.val());
+
+      if(processedSite.val() === null) {
+        processor(task.user.key(), task.site, asyncBack);
+
+      }
+      // else {
+      //   console.log("already have site");
+      //   console.log(task.user.key());
+      //   // ref.child('users/' + task.user.key() + "/URLS/" + task.site.key()).update({
+      //   //   Processed: 'yes',
+      //   // }, updateCallback);
+      // }
+    });
+
 }, 1);
 
 
@@ -57,15 +75,22 @@ ref.child("users").on("child_added", function(user) {
 
   // Start an envent listener waiting for websites to be added to the new user
   ref.child("users/" + user.key() + "/URLS").on("child_added", function(site) {
-    // Limit the ammount of websites it tries to load at onw time to same memory usage and try to avoid hangups
-      // Wait for others to finish processing before proceding
+
+
+
        processingQue++;
-      q.push({user: user, site: site}, function() {
-        console.log('Processed: ' + site.key());
 
-        processor(user.key(), site);
-      });
+       // Limit the ammount of websites it tries to load at onw time to same memory usage and try to avoid hangups
 
+    q.push({user: user, site: site}, function() {
+      console.log('Processed: ' + site.key());
+
+      // processor(user.key(), site);
+      ref.child('users/' + user + "/URLS/" + siteKey).update({
+        Processed: 'yes',
+      }, updateCallback);
+
+    });
   });
 });
 
@@ -260,12 +285,12 @@ function countKeyWords(input, user, siteKey, url, asyncBack) {
   console.log('Updating to:' + 'users/' + user + "URLS/" + siteKey);
 
   // Update user with stats about website
-  ref.child('users/' + user + "/URLS/" + siteKey).update({
-    Processed: 'yes',
-  }, updateCallback);
+  // ref.child('users/' + user + "/URLS/" + siteKey).update({
+  //   Processed: 'yes',
+  // }, updateCallback);
 
   // Update website in database
-  ref.child('websites').push({URL: url, keyWords: output});
+  ref.child('websites').push({url: url, keyWords: output});
 
   // asyncBack();
 
