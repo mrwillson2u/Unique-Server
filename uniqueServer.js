@@ -92,7 +92,7 @@ function processor(userKey, site, asyncBack) {
         // free memory associated with the window
 
         if (!err) {
-          var content = getKeyWords(window, userKey, userString.child("URLS/" + site.key()), asyncBack);
+          var content = getKeyWords(window, userKey, site.key(), url.val(), asyncBack);
 
         } else {
             console.log("error: " + err);
@@ -111,8 +111,8 @@ function getTitle(text) {
 }
 
 // Get all of the valuable content from the page
-function getKeyWords(pageHtml, user, setString) {
-  console.log('processing1!' + setString);
+function getKeyWords(pageHtml, userKey, siteKey, url, asyncBack) {
+  console.log('processing1!' + siteKey);
   var searchTags = ['title', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
   // var searchTags = ['title'];
   var importantText = [];
@@ -131,12 +131,12 @@ function getKeyWords(pageHtml, user, setString) {
       var result = [];
       processCounter1++;
       console.log("processCounter1: " + processCounter1);
-      parseText(importantText, user, setString);
+      parseText(importantText, userKey, siteKey, url, asyncBack);
 }
 
 
-function parseText(input, user, setString) {
-  console.log('processing1!' + setString);
+function parseText(input, userKey, siteKey, url, asyncBack) {
+  console.log('processing1!' + siteKey);
 
   var TfIdf = natural.TfIdf;
   var tfidf = new TfIdf();
@@ -172,14 +172,14 @@ function parseText(input, user, setString) {
               //console.log("--->" + result[j][0] + "  |  " + result[j][1]) + "<---";
               var lowerCase = result[j][0].toLowerCase();
               var stemmed = natural.PorterStemmer.stem(lowerCase);
-              keyWords.push(lowerCase);
+              keyWords.push(stemmed);
             }
           }
         }
       }
       processCounter3++;
 
-      countKeyWords(keyWords, user, setString);
+      countKeyWords(keyWords, userKey, siteKey, url, asyncBack);
     }
   });
 
@@ -187,8 +187,8 @@ function parseText(input, user, setString) {
 }
 
 
-function countKeyWords(input, user, setString) {
-  console.log('processing3!' + setString);
+function countKeyWords(input, user, siteKey, url, asyncBack) {
+  console.log('processing3!' + siteKey);
 
   // console.log('here');
   var rank = [];
@@ -223,11 +223,9 @@ function countKeyWords(input, user, setString) {
       rank.splice(i, 1);
     }
   }
-  // console.log('size: ' + rank.length);
-
   // Reorder the words (objects) in the array so that they are ordered from highest to lowest count
-  console.log('processing4!' + setString);
-
+  console.log('processing4!' + siteKey);
+  var output = {};
   if(rank.length > 1) {
     var orderedRank = [rank[0]];
 
@@ -248,35 +246,28 @@ function countKeyWords(input, user, setString) {
 
     }
 
+    // for(var i = 0; i < 15 && i < orderedRank.length; i++) {
+    //   // console.log('rank' + i + ': ' + orderedRank[i].count);
+    // }
 
 
-
-    for(var i = 0; i < 15 && i < orderedRank.length; i++) {
-      // console.log('rank' + i + ': ' + orderedRank[i].count);
-    }
-
-    var output = {};
     // Convert the array to an object because Friebase prefers it that way
     for(i in orderedRank) {
       output[i] = orderedRank[i];
     }
 
-    console.log('updating:  ' + setString + ' size: ' + orderedRank.length);
-    console.log('processing5a!' + setString);
-
-
-    setString.update({
-      keyWords: output,
-      Processed: 'yes'
-    }, updateCallback);
-  } else {
-    console.log('processing5b!' + setString);
-
-    setString.update({
-      Processed: 'yes'
-    }, updateCallback);
   }
+  console.log('Updating to:' + 'users/' + user + "URLS/" + siteKey);
 
+  // Update user with stats about website
+  ref.child('users/' + user + "/URLS/" + siteKey).update({
+    Processed: 'yes',
+  }, updateCallback);
+
+  // Update website in database
+  ref.child('websites').push({URL: url, keyWords: output});
+
+  // asyncBack();
 
   processingQue--;
 }
