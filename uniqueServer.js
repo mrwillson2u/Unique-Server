@@ -1,5 +1,3 @@
-// Fires as soon as all the content has loaded
-
 var natural = require('natural');
 var stemmer = natural.PorterStemmer;
 var Firebase = require('firebase');
@@ -8,6 +6,7 @@ var Tagger = require("brill-pos-tagger");
 // var http = require('http');
 // var https = require('https');
 var async = require('async');
+var readingTime = require('reading-time');
 
 var base_folder = "./node_modules/brill-pos-tagger/data/English/";
 var rules_file = base_folder + "tr_from_posjs.txt";
@@ -58,9 +57,7 @@ ref.child("users").on("child_added", function(user) {
 
   // Start an envent listener waiting for websites to be added to the new user
   ref.child("users/" + user.key() + "/URLS").on("child_added", function(site) {
-// console.log('test2');
     // Limit the ammount of websites it tries to load at onw time to same memory usage and try to avoid hangups
-
       // Wait for others to finish processing before proceding
        processingQue++;
       q.push({user: user, site: site}, function() {
@@ -72,49 +69,6 @@ ref.child("users").on("child_added", function(user) {
   });
 });
 
-
-
-//
-// ref.once("child_changed", function(user) {
-//   console.log(user.val());
-//   user.forEach(processor);
-// })
-
-
-
-
-// download("http://www.npmjs.com/package/node-jsdom", function(data) {
-//   console.log(data);
-// });
-
-
-// Utility function that downloads a URL and invokes
-// callback with the data.
-// function download(url, callback) {
-//   var header;
-//
-//   if(url.startsWith("https")) {
-//     header = https;
-//   } else if (url.startsWith("http:")){
-//     header = http;
-//   } else {
-//     return;
-//   }
-//
-//   header.get(url, function(res) {
-//     var data = "";
-//     res.on('data', function (chunk) {
-//       data += chunk;
-//     });
-//     res.on("end", function() {
-//       callback(data);
-//     });
-//   }).on("error", function(e) {
-//     console.log("http.get error: " + e);
-//     callback(null);
-//   });
-//
-// }
 
 
 
@@ -168,7 +122,6 @@ function getKeyWords(pageHtml, user, setString) {
     for(i in searchTags) {
        var newText = pageHtml.$(searchTags[i]).text();
        if(newText !== "") {
-      //console.log('newText: ' + newText);
        importantText.push(newText);
 
      }
@@ -176,12 +129,9 @@ function getKeyWords(pageHtml, user, setString) {
 
     var parsed = [];
       var result = [];
-      // console.log('parseText - length' + importantText.length);
-      //console.log('importantText: ' + importantText);
       processCounter1++;
       console.log("processCounter1: " + processCounter1);
       parseText(importantText, user, setString);
-      // parsed = parsed.concat(result);
 }
 
 
@@ -190,7 +140,6 @@ function parseText(input, user, setString) {
 
   var TfIdf = natural.TfIdf;
   var tfidf = new TfIdf();
-//console.log("This is the input: " + '"' + input[0] + '"');
   tokenizer = new natural.WordTokenizer();
   // split the string into an array
   var tokenized = [];
@@ -205,9 +154,6 @@ function parseText(input, user, setString) {
       tokenized.push(tokenizer.tokenize(input[i]));
     }
   }
-//console.log("tokenized[0] " + tokenized[0]);
-  //console.log("Tokenized: " + tokenized);
-  // Load all the text pieces into the document
 
   var keyWords = [];
 
@@ -220,8 +166,6 @@ function parseText(input, user, setString) {
         if(tokenized[i]){
           //console.log(tagger.tag(tokenized[i]));
           var result = tagger.tag(tokenized[i]);
-          //console.log('result.length: ' + result.length);
-          //console.log("Check for both: " + result[i]);
 
           for(j in result) {
             if(result[j][1] === "NN" || result[j][1] === "NNP" || result[j][1] === "NNPS" || result[j][1] === "NNS" ) {
@@ -229,26 +173,12 @@ function parseText(input, user, setString) {
               var lowerCase = result[j][0].toLowerCase();
               var stemmed = natural.PorterStemmer.stem(lowerCase);
               keyWords.push(lowerCase);
-              // for(k in keyWords) {
-              //   //console.log('setting: ' + keyWords.length);
-              // }
-
-              //console.log('setString: ' + setString);
-
-              //ref.child(setString).update({keyWords: keyWords});
-
             }
           }
         }
       }
       processCounter3++;
-      // console.log("processCounter3: " + processCounter3);
-      // console.log("count: " + user);
 
-      // console.log("keywordCount: " + keyWords.length);
-      for(var i = 0; i < 3; i++) {
-        // console.log("keywordCount" + i + ": " + keyWords[i]);
-      }
       countKeyWords(keyWords, user, setString);
     }
   });
@@ -264,7 +194,7 @@ function countKeyWords(input, user, setString) {
   var rank = [];
   var wordList = [];
 
-  // Fot each word in the input array, lets count how many times each word has occured
+  // For each word in the input array, lets count how many times each word has occured
   for(i in input) {
 
     var word = input[i];
@@ -286,7 +216,6 @@ function countKeyWords(input, user, setString) {
 
     }
   }
-// console.log('rank1: '+ rank[0].count + ' length: ' + rank.length);
 
   // Remove all the words what apeae only once
   for(i in rank) {
@@ -308,10 +237,7 @@ function countKeyWords(input, user, setString) {
     }
     for(var i = 1; i < rank.length; i++) {
       var position = 0;
-      // rankCount[]
-      //rank.splice(i, 1);
-      //console.log('rank2----: '+ rank[j].count);
-      // var rankCount = orderedRank[j].;
+
        for(j in orderedRank) {
          position = j;
          if(rank[i].count > orderedRank[j].count) {
@@ -324,7 +250,6 @@ function countKeyWords(input, user, setString) {
 
 
 
-    //uploadData(rank);
 
     for(var i = 0; i < 15 && i < orderedRank.length; i++) {
       // console.log('rank' + i + ': ' + orderedRank[i].count);
@@ -335,8 +260,6 @@ function countKeyWords(input, user, setString) {
     for(i in orderedRank) {
       output[i] = orderedRank[i];
     }
-// console.log('orderedRank:  ' + orderedRank);
-    // var refString = new Firebase(setString);
 
     console.log('updating:  ' + setString + ' size: ' + orderedRank.length);
     console.log('processing5a!' + setString);
@@ -346,30 +269,20 @@ function countKeyWords(input, user, setString) {
       keyWords: output,
       Processed: 'yes'
     }, updateCallback);
-    // uploadBuffer[setString] = {keyWords: output, Processed: 'true'};
   } else {
     console.log('processing5b!' + setString);
 
     setString.update({
       Processed: 'yes'
     }, updateCallback);
-    // uploadBuffer[setString] = {Processed: 'true'};
   }
 
 
-  // uploadObject[setString] =
-  // console.log("urlCount: " + urlCount);
-  // if(urlCount === 0) {
-  //   console.log('uploadBuffer');
-  //   console.log(uploadBuffer);
-  // // return output;
-  // }
   processingQue--;
 }
 
 function updateCallback(error) {
 
-    // ref.child('users').on("value", processURLS);
   urlCount--;
 }
 
@@ -396,28 +309,3 @@ function uploadData(data) {
    }
   });
 }
-
-
-
-// function requesdUrl(url) {
-//   var xhr = corsRequest('GET', url);
-//
-//   if(!xhr) {
-//     throw new Error('CORS not supported!');
-//   }
-//
-//   xhr.onload = function() {
-//     var text = xhr.responseText;
-//     var title = getTitle(text);
-//     console.log('Response from CORS request to ' + url + ': ' + title);
-//     //parsePage(text);
-//     //uploadData()
-//   }
-//   xhr.onerror = function() {
-//     console.log('Woops, there was an error making the request.');
-//   };
-//
-//   xhr.setRequestHeader('Access-Control-Request_Meathod', 'GET');
-//   xhr.send();
-//
-// }
