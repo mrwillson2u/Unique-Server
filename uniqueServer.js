@@ -1,24 +1,13 @@
 // Fires as soon as all the content has loaded
-// document.addEventListener('DOMContentLoaded', function() {
-// var express = require('express')
-//   , cors = require('cors')
-//   , app = express();
-//
-// app.use(cors());
-//
-// app.get('/products/:id', function(req, res, next){
-//   res.json({msg: 'This is CORS-enabled for all origins!'});
-// });
-//
-// app.listen(80, function(){
-//   console.log('CORS-enabled web server listening on port 80');
-// });
 
 var natural = require('natural');
 var stemmer = natural.PorterStemmer;
 var Firebase = require('firebase');
 var request = require('request');
 var Tagger = require("brill-pos-tagger");
+var http = require('http');
+var https = require('https');
+var async = require('async');
 
 var base_folder = "./data/English/";
 var rules_file = base_folder + "tr_from_posjs.txt";
@@ -50,25 +39,32 @@ var processCounter3 = 0;
 
 var currentlyProccessing = false;
 var processingQue = 0
-
-// ref.child('users').on("child_changed", function(snapshot) {
-//   snapshot.
-// }
-//
-//
-// .orderByChild('Processed').equalTo(false).once
-console.log('test');
+var ignoreWords = [i, use];
 
 
+var downloading = false;
+
+console.log('starting..');
+
+var q = async.queue(function (task, asyncBack) {
+    console.log('processing' + task.site.key());
+    processor(task.user.key(), task.site, asyncBack);
+}, 1);
+
+
+var testVar = 0;
+// An event listener watching for new users added
 ref.child("users").on("child_added", function(user) {
 
   // Start an envent listener waiting for wensires to be added to the new user
   ref.child("users/" + user.key() + "/URLS").on("child_added", function(site) {
-    // console.log("new website!" + site.key());
-    // console.log(site.val());
-    while(processingQue >= 20) {
+// console.log('test2');
+    // Limit the ammount of websites it tries to load at onw time to same memory usage and try to avoid hangups
+
       // Wait for others to finish processing before proceding
-    }
+       processingQue++;
+      q.push({user: user, site: site}, function() {
+        console.log('Processed: ' + site.key());
 
      processor(user.key(), site);
   });
@@ -85,53 +81,68 @@ ref.child("users").on("child_added", function(user) {
 
 
 
-//
-// , function(error) {
-//   if (error) {
-//     alert("Data could not be saved." + error);
-//   } else {
-//     alert("Data saved successfully.");
-//     ref.on("child_changed", function(user) {
-//       user.forEach(processor);
-//     });
-//   }
+
+// download("http://www.npmjs.com/package/node-jsdom", function(data) {
+//   console.log(data);
 // });
 
 
+// Utility function that downloads a URL and invokes
+// callback with the data.
+// function download(url, callback) {
+//   var header;
+//
+//   if(url.startsWith("https")) {
+//     header = https;
+//   } else if (url.startsWith("http:")){
+//     header = http;
+//   } else {
+//     return;
+//   }
+//
+//   header.get(url, function(res) {
+//     var data = "";
+//     res.on('data', function (chunk) {
+//       data += chunk;
+//     });
+//     res.on("end", function() {
+//       callback(data);
+//     });
+//   }).on("error", function(e) {
+//     console.log("http.get error: " + e);
+//     callback(null);
+//   });
+//
+// }
 
-  // For each user
-  // snapshot.forEach(function(user) {
-    // downloadBuffer = users.val();
-    //
-    //
-    //
-    //
-    // console.log('downloadBuffer: ');
-    // console.log(downloadBuffer);
-    // urlCount = user.child('URLS').numChildren();
-    // console.log('urlCount' + urlCount);
-    // console.log(user.child('URLS').key());
-    // console.log(ref.child("users/" + user.key() + '/URLS').toString());
-function processor(userKey, site) {
+
+
+function processor(userKey, site, asyncBack) {
 
   console.log('user');
   console.log(userKey);
 
     var url = site.child('URL');
 
-    if(site.val().Processed === "no") {
+    if(site.val().Processed === "no" && !site.val().URL.endsWith('.pdf') ) {
       processingQue++;
       console.log('processingQue: ' + processingQue);
       var userString = ref.child('users/' + userKey);
-      // userString.child("URLS/" + site.key()).update({Processed: "in progress"});
-      // console.log("Processing url: " + url.val().URL);
+      // request('https://www.google.com', function(err, resp, window) {
+        // if (err) throw err;
+        // $ = cheerio.load(body);
 
-      jsdom.env(url.val(), ["http://code.jquery.com/jquery.js"], function (err, window) {
-        console.log('processing1!' + userString.child("URLS/" + site.key()));
+        //Scraping function here
+
+        console.log('url: ' + url.val());
+
+
+      jsdom.env(url.val(),["http://code.jquery.com/jquery.js"], function (err, window) {
+
         // free memory associated with the window
 
         if (!err) {
-          var content = getKeyWords(window, userKey, userString.child("URLS/" + site.key()));
+          var content = getKeyWords(window, userKey, userString.child("URLS/" + site.key()), asyncBack);
 
         } else {
             console.log("error: " + err);
