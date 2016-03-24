@@ -14,7 +14,8 @@
 //   console.log('CORS-enabled web server listening on port 80');
 // });
 
-var natural = require('natural'), stemmer = natural.PorterStemmer;
+var natural = require('natural');
+var stemmer = natural.PorterStemmer;
 var Firebase = require('firebase');
 var request = require('request');
 var Tagger = require("brill-pos-tagger");
@@ -24,7 +25,7 @@ var rules_file = base_folder + "tr_from_posjs.txt";
 var lexicon_file = base_folder + "lexicon_from_posjs.json";
 var default_category = 'N';
 
-var $ = require('jquery')(require("jsdom").jsdom().parentWindow);
+var $ = require('jquery');
 
 var fs = require('fs')
 var output = fs.createWriteStream('./stdout.log');
@@ -126,7 +127,7 @@ function processor(userKey, site) {
       // console.log("Processing url: " + url.val().URL);
 
       jsdom.env(url.val(), ["http://code.jquery.com/jquery.js"], function (err, window) {
-        console.log('processing1!' +userString.child("URLS/" + site.key()));
+        console.log('processing1!' + userString.child("URLS/" + site.key()));
         // free memory associated with the window
 
         if (!err) {
