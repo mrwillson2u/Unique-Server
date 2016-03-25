@@ -3,8 +3,6 @@ var stemmer = natural.PorterStemmer;
 var Firebase = require('firebase');
 var request = require('request');
 var Tagger = require("brill-pos-tagger");
-// var http = require('http');
-// var https = require('https');
 var async = require('async');
 var readingTime = require('reading-time');
 
@@ -30,23 +28,15 @@ var uploadBuffer = {};
 var downloadBuffer = [];
 var urlCount = 0;
 
-var processCounter0 = 0;
-var processCounter = 0;
-var processCounter1 = 0;
-var processCounter2 = 0;
-var processCounter3 = 0;
-
 var currentlyProccessing = false;
 var processingQue = 0
 var ignoreWords = ["i", "use"];
-
 
 var downloading = false;
 
 console.log('starting..');
 
 var q = async.queue(function (task, asyncBack) {
-
     //Check if we have processed this site already
     var hostname = getHostName(task.site.child('URL').val());
     console.log("hostname: " + hostname);
@@ -79,7 +69,6 @@ ref.child("users").on("child_added", function(user) {
   ref.child("users/" + user.key() + "/URLS").on("child_added", function(site) {
 
        processingQue++;
-
        // Limit the ammount of websites it tries to load at onw time to same memory usage and try to avoid hangups
 
     q.push({user: user, site: site}, function() {
@@ -90,11 +79,7 @@ ref.child("users").on("child_added", function(user) {
 });
 
 
-
-
 function processor(site, asyncBack) {
-
-
     var url = site.page.child('URL');
 
     if(site.page.val().Processed === "no" && !site.page.val().URL.endsWith('.pdf') ) {
@@ -191,7 +176,6 @@ function parseText(input, site, asyncBack) {
           }
         }
       }
-      processCounter3++;
 
       countKeyWords(keyWords, site, asyncBack);
     }
@@ -296,9 +280,6 @@ function getHostName(url) {
       return null;
   }
 }
-
-
-
 
 
 function uploadData(data) {
