@@ -38,9 +38,18 @@ console.log('starting..');
 
 var q = async.queue(function (task, asyncBack) {
     //Check if we have processed this site already
+    console.log("task.site.child('URL').val(): " + task.site.child('URL').val());
     var hostname = getHostName(task.site.child('URL').val());
     console.log("hostname: " + hostname);
-    var convertedName = hostname.replace(/\./g, " ");
+
+    // Sometimes getHostName() cannot
+    try {
+      var convertedName = hostname.replace(/\./g, " ");
+    }
+    catch(err) {
+      console.log("Error getting hostname: " + err);
+    }
+
     ref.child("websites").orderByKey().equalTo(convertedName).once("value", function(processedHostname) {
       if(processedHostname.val() === null) {
           processor({hostname: hostname, page: task.site}, asyncBack);
