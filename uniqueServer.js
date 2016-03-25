@@ -46,24 +46,26 @@ var downloading = false;
 console.log('starting..');
 
 var q = async.queue(function (task, asyncBack) {
-    console.log('processing' + task.site.key());
+
     //Check if we have processed this site already
-    console.log("checking already processed websites for: " + task.site.child('URL').val());
-    ref.child("websites").orderByChild('url').equalTo(task.site.child('URL').val()).once("value", function(processedSite) {
-      console.log("processedSite: ");
-      console.log(processedSite.val());
+    var hostname = getHostName(task.site.child('URL').val());
+    console.log("hostname: " + hostname);
+    var convertedName = hostname.replace(/\./g, " ");
+    ref.child("websites").orderByKey().equalTo(convertedName).once("value", function(processedHostname) {
+      if(processedHostname.val() === null) {
+          processor({hostname: hostname, page: task.site}, asyncBack);
+      } else {
+        ref.child("websites/" + convertedName + "/pages").orderByChild('page').equalTo(task.site.child('URL').val()).once("value", function(processedPage) {
 
-      if(processedSite.val() === null) {
-        processor(task.user.key(), task.site, asyncBack);
+          if(processedPage.val() === null) {
+              processor({hostname: hostname, page: task.site}, asyncBack);
 
+          } else {
+            // Already done
+            asyncBack();
+          }
+        });
       }
-      // else {
-      //   console.log("already have site");
-      //   console.log(task.user.key());
-      //   // ref.child('users/' + task.user.key() + "/URLS/" + task.site.key()).update({
-      //   //   Processed: 'yes',
-      //   // }, updateCallback);
-      // }
     });
 
 }, 1);
@@ -76,19 +78,12 @@ ref.child("users").on("child_added", function(user) {
   // Start an envent listener waiting for websites to be added to the new user
   ref.child("users/" + user.key() + "/URLS").on("child_added", function(site) {
 
-
-
        processingQue++;
 
        // Limit the ammount of websites it tries to load at onw time to same memory usage and try to avoid hangups
 
     q.push({user: user, site: site}, function() {
       console.log('Processed: ' + site.key());
-
-      // processor(user.key(), site);
-      ref.child('users/' + user + "/URLS/" + siteKey).update({
-        Processed: 'yes',
-      }, updateCallback);
 
     });
   });
@@ -97,17 +92,14 @@ ref.child("users").on("child_added", function(user) {
 
 
 
-function processor(userKey, site, asyncBack) {
+function processor(site, asyncBack) {
 
-  console.log('user');
-  console.log(userKey);
 
-    var url = site.child('URL');
+    var url = site.page.child('URL');
 
-    if(site.val().Processed === "no" && !site.val().URL.endsWith('.pdf') ) {
+    if(site.page.val().Processed === "no" && !site.page.val().URL.endsWith('.pdf') ) {
       processingQue++;
       console.log('processingQue: ' + processingQue);
-      var userString = ref.child('users/' + userKey);
 
         console.log('url: ' + url.val());
 
@@ -117,7 +109,7 @@ function processor(userKey, site, asyncBack) {
         // free memory associated with the window
 
         if (!err) {
-          var content = getKeyWords(window, userKey, site.key(), url.val(), asyncBack);
+          var content = getKeyWords(window, site, asyncBack);
 
         } else {
             console.log("error: " + err);
@@ -126,7 +118,7 @@ function processor(userKey, site, asyncBack) {
     } else {
       // console.log('Already procesed!');
       console.log('Already procesed!' + url.val());
-
+      asyncBack();
     }
 }
 
@@ -136,13 +128,10 @@ function getTitle(text) {
 }
 
 // Get all of the valuable content from the page
-function getKeyWords(pageHtml, userKey, siteKey, url, asyncBack) {
-  console.log('processing1!' + siteKey);
+function getKeyWords(pageHtml, site, asyncBack) {
+  console.log('processing1!' + site.page.key());
   var searchTags = ['title', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
-  // var searchTags = ['title'];
   var importantText = [];
-  // importantText = $(pageHtml).find(searchTags[1]).text();
-
 
     for(i in searchTags) {
        var newText = pageHtml.$(searchTags[i]).text();
@@ -156,12 +145,12 @@ function getKeyWords(pageHtml, userKey, siteKey, url, asyncBack) {
       var result = [];
       processCounter1++;
       console.log("processCounter1: " + processCounter1);
-      parseText(importantText, userKey, siteKey, url, asyncBack);
+      parseText(importantText, site, asyncBack);
 }
 
 
-function parseText(input, userKey, siteKey, url, asyncBack) {
-  console.log('processing1!' + siteKey);
+function parseText(input, site, asyncBack) {
+  console.log('processing1!' + site.page.key());
 
   var TfIdf = natural.TfIdf;
   var tfidf = new TfIdf();
@@ -204,16 +193,14 @@ function parseText(input, userKey, siteKey, url, asyncBack) {
       }
       processCounter3++;
 
-      countKeyWords(keyWords, userKey, siteKey, url, asyncBack);
+      countKeyWords(keyWords, site, asyncBack);
     }
   });
-
-
 }
 
 
-function countKeyWords(input, user, siteKey, url, asyncBack) {
-  console.log('processing3!' + siteKey);
+function countKeyWords(input, site, asyncBack) {
+  console.log('processing3!' + site.page.key());
 
   // console.log('here');
   var rank = [];
@@ -249,7 +236,7 @@ function countKeyWords(input, user, siteKey, url, asyncBack) {
     }
   }
   // Reorder the words (objects) in the array so that they are ordered from highest to lowest count
-  console.log('processing4!' + siteKey);
+  console.log('processing4!' + site.page.key());
   var output = {};
   if(rank.length > 1) {
     var orderedRank = [rank[0]];
@@ -271,9 +258,7 @@ function countKeyWords(input, user, siteKey, url, asyncBack) {
 
     }
 
-    // for(var i = 0; i < 15 && i < orderedRank.length; i++) {
-    //   // console.log('rank' + i + ': ' + orderedRank[i].count);
-    // }
+
 
 
     // Convert the array to an object because Friebase prefers it that way
@@ -282,17 +267,11 @@ function countKeyWords(input, user, siteKey, url, asyncBack) {
     }
 
   }
-  console.log('Updating to:' + 'users/' + user + "URLS/" + siteKey);
 
-  // Update user with stats about website
-  // ref.child('users/' + user + "/URLS/" + siteKey).update({
-  //   Processed: 'yes',
-  // }, updateCallback);
+  var convertedName = site.hostname.replace(/\./g, " ");
+  ref.child('websites/' + convertedName + "/pages").push({page: site.page.val().URL, keyWords: output});
 
-  // Update website in database
-  ref.child('websites').push({url: url, keyWords: output});
-
-  // asyncBack();
+  asyncBack();
 
   processingQue--;
 }
@@ -306,6 +285,20 @@ function updateCallback(error) {
 function getTitle(text) {
   return text.match('<title>(.*)?</title>')[1];
 }
+
+
+function getHostName(url) {
+  var match = url.match(/:\/\/(www[0-9]?\.)?(.[^/:]+)/i);
+  if (match != null && match.length > 2 && typeof match[2] === 'string' && match[2].length > 0) {
+  return match[2];
+  }
+  else {
+      return null;
+  }
+}
+
+
+
 
 
 function uploadData(data) {
