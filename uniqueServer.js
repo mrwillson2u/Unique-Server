@@ -5,7 +5,6 @@ var request = require('request');
 var Tagger = require("brill-pos-tagger");
 var async = require('async');
 var readingTime = require('reading-time');
-var superagent = request('superagent');
 
 var base_folder = "./node_modules/brill-pos-tagger/data/English/";
 var rules_file = base_folder + "tr_from_posjs.txt";
@@ -90,20 +89,18 @@ function processor(site, asyncBack) {
         console.log('url: ' + url.val());
 
 
-      // jsdom.env(url.val(),["http://code.jquery.com/jquery.js"], function (err, window) {
-      // superagent
-      //   .get(url)
-      //   .on('error', reject)
-      //   .end(function (window) {
-      //   // free memory associated with the window
-      //
-      //   // if (!err) {
-      //   //   var content = getKeyWords(window, site, asyncBack);
-      //   //
-      //   // } else {
-      //       console.log("error: " + err);
-      //   // }
-      // });
+      jsdom.env(url.val(),["http://code.jquery.com/jquery.js"], function (err, window) {
+
+        // free memory associated with the window
+
+        if (!err) {
+          var content = getKeyWords(window, site, asyncBack);
+
+        } else {
+            console.log(err + "- skipping this url.");
+            asyncBack();
+        }
+      });
     } else {
       // console.log('Already procesed!');
       console.log('Already procesed!' + url.val());
