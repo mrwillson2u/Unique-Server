@@ -128,8 +128,6 @@ function getKeyWords(pageHtml, site, asyncBack) {
 
     var parsed = [];
       var result = [];
-      processCounter1++;
-      console.log("processCounter1: " + processCounter1);
       parseText(importantText, site, asyncBack);
 }
 
@@ -142,8 +140,6 @@ function parseText(input, site, asyncBack) {
   tokenizer = new natural.WordTokenizer();
   // split the string into an array
   var tokenized = [];
-  processCounter2++;
-  console.log("processCounter2: " + processCounter2);
   for(i in input) {
 
     var token = tokenizer.tokenize(input[i]);
@@ -176,8 +172,8 @@ function parseText(input, site, asyncBack) {
           }
         }
       }
-
       countKeyWords(keyWords, site, asyncBack);
+
     }
   });
 }
