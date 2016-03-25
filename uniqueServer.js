@@ -91,19 +91,19 @@ function processor(site, asyncBack) {
 
 
       // jsdom.env(url.val(),["http://code.jquery.com/jquery.js"], function (err, window) {
-      superagent
-        .get(url)
-        .on('error', reject)
-        .end(function (window) {
-        // free memory associated with the window
-
-        // if (!err) {
-        //   var content = getKeyWords(window, site, asyncBack);
-        //
-        // } else {
-            console.log("error: " + err);
-        // }
-      });
+      // superagent
+      //   .get(url)
+      //   .on('error', reject)
+      //   .end(function (window) {
+      //   // free memory associated with the window
+      //
+      //   // if (!err) {
+      //   //   var content = getKeyWords(window, site, asyncBack);
+      //   //
+      //   // } else {
+      //       console.log("error: " + err);
+      //   // }
+      // });
     } else {
       // console.log('Already procesed!');
       console.log('Already procesed!' + url.val());
