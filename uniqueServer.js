@@ -11,8 +11,6 @@ var rules_file = base_folder + "tr_from_posjs.txt";
 var lexicon_file = base_folder + "lexicon_from_posjs.json";
 var default_category = 'N';
 
-
-
 var fs = require('fs')
 var output = fs.createWriteStream('./stdout.log');
 var errorOutput = fs.createWriteStream('./stderr.log');
@@ -32,7 +30,7 @@ var urlCount = 0;
 
 var currentlyProccessing = false;
 var processingQue = 0
-var ignoreWords = ["i", "use"];
+
 
 var downloading = false;
 
@@ -163,7 +161,7 @@ function getKeyWords(pageHtml) {
 // Takes in array of words
 function parseText(input) {
   console.log('processing1!' + site.page.key());
-
+  var ignoreWords = ["i", "use"];
   var TfIdf = natural.TfIdf;
   var tfidf = new TfIdf();
   tokenizer = new natural.WordTokenizer();
@@ -193,10 +191,21 @@ function parseText(input) {
 
           for(j in result) {
             if(result[j][1] === "NN" || result[j][1] === "NNP" || result[j][1] === "NNPS" || result[j][1] === "NNS" ) {
-              //console.log("--->" + result[j][0] + "  |  " + result[j][1]) + "<---";
               var lowerCase = result[j][0].toLowerCase();
-              var stemmed = natural.PorterStemmer.stem(lowerCase);
-              keyWords.push(stemmed);
+
+              //If it's a word we should ignore
+              var ignore = false;
+              for(i in ignoreWords) {
+                if(lowerCase === ignoreWords[i]) {
+                  ignore = true;
+                }
+              }
+
+              // If its not one of the words we want to ignore
+              if(!ignore) {
+                var stemmed = natural.PorterStemmer.stem(lowerCase);
+                keyWords.push(stemmed);
+              }
             }
           }
         }
@@ -301,7 +310,6 @@ function getHostName(url) {
       return null;
   }
 }
-
 
 function uploadData(data) {
   var auth = ref.getAuth();
