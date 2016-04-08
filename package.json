@@ -22,7 +22,9 @@
   "homepage": "https://github.com/mrwillson2u/Unique-Server#readme",
   "dependencies": {
     "brill-pos-tagger": "0.0.4",
+    "express": "^4.13.4",
     "firebase": "^2.4.1",
+    "firebase-token-generator": "^2.0.0",
     "fs": "0.0.2",
     "jquery": "^2.2.2",
     "jsdom": "^8.1.0",

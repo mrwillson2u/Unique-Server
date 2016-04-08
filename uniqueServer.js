@@ -11,19 +11,21 @@ var rules_file = base_folder + "tr_from_posjs.txt";
 var lexicon_file = base_folder + "lexicon_from_posjs.json";
 var default_category = 'N';
 
-var $ = require('jquery');
+
 
 var fs = require('fs')
 var output = fs.createWriteStream('./stdout.log');
 var errorOutput = fs.createWriteStream('./stderr.log');
 var logger = new console.Console(output, errorOutput);
 //jsdom dependancy of jQuery
-var jsdom = require('jsdom').jsdom, document = jsdom('test');
-global.window = document.defaultView;
-global.XMLHttpRequest = window.XMLHttpRequest;
+var jsdom = require('jsdom');
+var $ = require('jquery');
+// .jsdom, document = jsdom('test');
+// global.window = document.defaultView;
+// global.XMLHttpRequest = window.XMLHttpRequest;
 // var $ = require('jquery');
 var ref = new Firebase("https://unique-iq.firebaseio.com");
-
+// ref.child('websites').set({});
 var uploadBuffer = {};
 var downloadBuffer = [];
 var urlCount = 0;
@@ -35,6 +37,16 @@ var ignoreWords = ["i", "use"];
 var downloading = false;
 
 console.log('starting..');
+
+var virtualConsole = jsdom.createVirtualConsole();
+
+virtualConsole.on("log", function (message) {
+  console.log("console.log called ->", message);
+});
+
+var document = jsdom.jsdom(undefined, {
+  virtualConsole: virtualConsole
+});
 
 var q = async.queue(function (task, asyncBack) {
     //Check if we have processed this site already
@@ -76,8 +88,6 @@ ref.child("users").on("child_added", function(user) {
 
   // Start an envent listener waiting for websites to be added to the new user
   ref.child("users/" + user.key() + "/URLS").on("child_added", function(site) {
-
-       processingQue++;
        // Limit the ammount of websites it tries to load at onw time to same memory usage and try to avoid hangups
 
     q.push({user: user, site: site}, function() {
@@ -88,28 +98,38 @@ ref.child("users").on("child_added", function(user) {
 });
 
 
+
+// Takes in URL then downloads and process the website
 function processor(site, asyncBack) {
     var url = site.page.child('URL');
 
     if(site.page.val().Processed === "no" && !site.page.val().URL.endsWith('.pdf') ) {
-      processingQue++;
       console.log('processingQue: ' + processingQue);
+      console.log('url: ' + url.val());
 
-        console.log('url: ' + url.val());
+      // Downloads the HTML data
+      jsdom.env({url: url.val(), scripts: ["http://code.jquery.com/jquery.js"], created: function(err, window) {
+        console.log("created: " + err);
 
-
-      jsdom.env(url.val(),["http://code.jquery.com/jquery.js"], function (err, window) {
-
+      }, done: function (err, window) {
         // free memory associated with the window
+        //console.log("window: " + window);
 
-        if (!err) {
-          var content = getKeyWords(window, site, asyncBack);
+        if (!err && window !== null) {
+          var keyWordsArray = getKeyWords(window);
+          var parsedWordsArray = parseWords(keyWordsArray);
+          var countedWords = countKeyWords(parsedWordsArray);
+
+          var convertedName = site.hostname.replace(/\./g, " ");
+          ref.child('websites/' + convertedName + "/pages").push({page: site.page.val().URL, keyWords: countedWords});
+
+          asyncBack();
 
         } else {
             console.log(err + "- skipping this url.");
             asyncBack();
         }
-      });
+      }});
     } else {
       // console.log('Already procesed!');
       console.log('Already procesed!' + url.val());
@@ -122,8 +142,8 @@ function getTitle(text) {
   return text.match('<title>(.*)?</title>')[1];
 }
 
-// Get all of the valuable content from the page
-function getKeyWords(pageHtml, site, asyncBack) {
+// Get all of the valuable content from the DOM
+function getKeyWords(pageHtml) {
   console.log('processing1!' + site.page.key());
   var searchTags = ['title', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
   var importantText = [];
@@ -136,13 +156,12 @@ function getKeyWords(pageHtml, site, asyncBack) {
      }
     }
 
-    var parsed = [];
-      var result = [];
-      parseText(importantText, site, asyncBack);
+    return importantText;
+    //parseText(importantText, site, asyncBack);
 }
 
-
-function parseText(input, site, asyncBack) {
+// Takes in array of words
+function parseText(input) {
   console.log('processing1!' + site.page.key());
 
   var TfIdf = natural.TfIdf;
@@ -182,14 +201,14 @@ function parseText(input, site, asyncBack) {
           }
         }
       }
-      countKeyWords(keyWords, site, asyncBack);
+      countKeyWords(keyWords);
 
     }
   });
 }
 
-
-function countKeyWords(input, site, asyncBack) {
+// Takes in an array, sorts them and counts them
+function countKeyWords(input) {
   console.log('processing3!' + site.page.key());
 
   // console.log('here');
@@ -248,9 +267,6 @@ function countKeyWords(input, site, asyncBack) {
 
     }
 
-
-
-
     // Convert the array to an object because Friebase prefers it that way
     for(i in orderedRank) {
       output[i] = orderedRank[i];
@@ -258,12 +274,11 @@ function countKeyWords(input, site, asyncBack) {
 
   }
 
-  var convertedName = site.hostname.replace(/\./g, " ");
-  ref.child('websites/' + convertedName + "/pages").push({page: site.page.val().URL, keyWords: output});
+  // var convertedName = site.hostname.replace(/\./g, " ");
+  // ref.child('websites/' + convertedName + "/pages").push({page: site.page.val().URL, keyWords: output});
+  //
+  // asyncBack();
 
-  asyncBack();
-
-  processingQue--;
 }
 
 function updateCallback(error) {
