@@ -5,11 +5,15 @@ var request = require('request');
 var Tagger = require("brill-pos-tagger");
 var async = require('async');
 var readingTime = require('reading-time');
-
+var app = require('express').express();
+var http = require('http');
 var base_folder = "./node_modules/brill-pos-tagger/data/English/";
 var rules_file = base_folder + "tr_from_posjs.txt";
 var lexicon_file = base_folder + "lexicon_from_posjs.json";
 var default_category = 'N';
+
+var FirebaseTokenGenerator = require("firebase-token-generator");
+var tokenGenerator = new FirebaseTokenGenerator("<YOUR_FIREBASE_SECRET>");
 
 var fs = require('fs')
 var output = fs.createWriteStream('./stdout.log');
@@ -45,6 +49,45 @@ virtualConsole.on("log", function (message) {
 var document = jsdom.jsdom(undefined, {
   virtualConsole: virtualConsole
 });
+
+var http = require('http');
+http.createServer(function(request, response) {
+  var headers = request.headers;
+  var method = request.method;
+  var url = request.url;
+  var body = [];
+  request.on('error', function(err) {
+    console.error(err);
+  }).on('data', function(chunk) {
+    body.push(chunk);
+  }).on('end', function() {
+    body = Buffer.concat(body).toString();
+    // BEGINNING OF NEW STUFF
+
+    response.on('error', function(err) {
+      console.error(err);
+    });
+    console.log("recieved: " + body);
+    response.statusCode = 200;
+    response.setHeader('Content-Type', 'application/json');
+    // Note: the 2 lines above could be replaced with this next one:
+    // response.writeHead(200, {'Content-Type': 'application/json'})
+
+    // var responseBody = {
+    //   headers: headers,
+    //   method: method,
+    //   url: url,
+    //   body: body
+    // };
+
+    response.write(JSON.stringify(responseBody));
+    response.end();
+    // Note: the 2 lines above could be replaced with this next one:
+    // response.end(JSON.stringify(responseBody))
+
+    // END OF NEW STUFF
+  });
+}).listen(80);
 
 var q = async.queue(function (task, asyncBack) {
     //Check if we have processed this site already
