@@ -1,8 +1,6 @@
-var express = require('express');
-var app = express();
 var FirebaseTokenGenerator = require("firebase-token-generator");
 var tokenGenerator = new FirebaseTokenGenerator("k1J7DInceZfL8K34rjQ0E2uX4Lgb1oT3njQaX6Iz");
-var token = tokenGenerator.createToken({uid: "1", some: "arbitrary", data: "here"});
+// var token = tokenGenerator.createToken({uid: "1", some: "arbitrary", data: "here"});
 
 
 var http = require('http');
