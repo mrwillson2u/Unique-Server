@@ -1,1 +1,1 @@
-web: tokenGenerator.js
+web: node tokenGenerator.js
