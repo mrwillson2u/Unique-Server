@@ -17,6 +17,7 @@ http.createServer(function(request, response) {
 
   if (request.method === 'GET') {//request.url === ''
     var token = tokenGenerator.createToken({uid: request.uid});
+    console.log("Token: " + token);
     request.pipe(token);
   } else {
     response.statusCode = 404;
