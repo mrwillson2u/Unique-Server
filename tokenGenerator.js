@@ -33,7 +33,7 @@ http.createServer(function(request, response) {
     response.statusCode = 404;
     response.end();
   }
-  else if (request.method === 'POST') {//request.url === ''
+  if (request.method === 'POST') {//request.url === ''
 
     var body = [];
     request.on('data', function(chunk) {
