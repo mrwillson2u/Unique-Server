@@ -41,7 +41,8 @@ http.createServer(function(request, response) {
       // at this point, `body` has the entire request body stored in it as a string
       var token = tokenGenerator.createToken({uid: body});
       console.log("Token: " + token);
-      request.pipe(token);
+      response.write(token);
+      response.end();
     });
   }else {
     response.statusCode = 404;
