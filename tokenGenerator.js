@@ -8,10 +8,13 @@ var http = require('http');
 console.log("Starting....");
 
 http.createServer(function(request, response) {
-  console.log("request:");
-  console.log(request);
-  console.log("response:");
-  console.log(response);
+  console.log("request method:");
+  console.log(request.method);
+  // console.log(request);
+  // console.log("=============================");
+  // console.log("response:");
+  // console.log(response);
+  // console.log("=============================");
 
   request.on('error', function(err) {
     console.error(err);
@@ -30,4 +33,24 @@ http.createServer(function(request, response) {
     response.statusCode = 404;
     response.end();
   }
+  else if (request.method === 'POST') {//request.url === ''
+
+    var body = [];
+    request.on('data', function(chunk) {
+      body.push(chunk);
+    }).on('end', function() {
+      body = Buffer.concat(body).toString();
+      console.log('body');
+      console.log(body);
+      // at this point, `body` has the entire request body stored in it as a string
+    });
+    var token = tokenGenerator.createToken({uid: request.uid});
+    console.log("Token: " + token);
+    request.pipe(token);
+
+  } else {
+    response.statusCode = 404;
+    response.end();
+  }
+
 }).listen(process.env.PORT || 3000);
