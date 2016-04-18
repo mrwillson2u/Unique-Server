@@ -5,7 +5,14 @@ var tokenGenerator = new FirebaseTokenGenerator("k1J7DInceZfL8K34rjQ0E2uX4Lgb1oT
 
 var http = require('http');
 
+console.log("Starting....");
+
 http.createServer(function(request, response) {
+  console.log("request:");
+  console.log(request);
+  console.log("response:");
+  console.log(response);
+
   request.on('error', function(err) {
     console.error(err);
     response.statusCode = 400;
