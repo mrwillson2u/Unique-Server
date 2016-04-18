@@ -29,11 +29,7 @@ http.createServer(function(request, response) {
     var token = tokenGenerator.createToken({uid: request.uid});
     console.log("Token: " + token);
     request.pipe(token);
-  } else {
-    response.statusCode = 404;
-    response.end();
-  }
-  if (request.method === 'POST') {//request.url === ''
+  } else if (request.method === 'POST') {//request.url === ''
 
     var body = [];
     request.on('data', function(chunk) {
@@ -43,12 +39,11 @@ http.createServer(function(request, response) {
       console.log('body');
       console.log(body);
       // at this point, `body` has the entire request body stored in it as a string
+      var token = tokenGenerator.createToken({uid: body});
+      console.log("Token: " + token);
+      request.pipe(token);
     });
-    var token = tokenGenerator.createToken({uid: request.uid});
-    console.log("Token: " + token);
-    request.pipe(token);
-
-  } else {
+  }else {
     response.statusCode = 404;
     response.end();
   }
