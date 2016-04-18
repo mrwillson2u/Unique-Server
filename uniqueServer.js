@@ -22,10 +22,7 @@ var logger = new console.Console(output, errorOutput);
 //jsdom dependancy of jQuery
 var jsdom = require('jsdom');
 var $ = require('jquery');
-// .jsdom, document = jsdom('test');
-// global.window = document.defaultView;
-// global.XMLHttpRequest = window.XMLHttpRequest;
-// var $ = require('jquery');
+
 var ref = new Firebase("https://unique-iq.firebaseio.com");
 // ref.child('websites').set({});
 var uploadBuffer = {};
@@ -44,41 +41,34 @@ var virtualConsole = jsdom.createVirtualConsole();
 
 
 //========================
-var FirebaseTokenGenerator = require("firebase-token-generator");
-var tokenGenerator = new FirebaseTokenGenerator("k1J7DInceZfL8K34rjQ0E2uX4Lgb1oT3njQaX6Iz");
+// var FirebaseTokenGenerator = require("firebase-token-generator");
+// var tokenGenerator = new FirebaseTokenGenerator("k1J7DInceZfL8K34rjQ0E2uX4Lgb1oT3njQaX6Iz");
 // var token = tokenGenerator.createToken({uid: "1", some: "arbitrary", data: "here"});
 
 
-var http = require('http');
-
-http.createServer(function(request, response) {
-  request.on('error', function(err) {
-    console.error(err);
-    response.statusCode = 400;
-    response.end();
-  });
-  response.on('error', function(err) {
-    console.error(err);
-  });
-
-  if (request.method === 'GET') {//request.url === ''
-    var token = tokenGenerator.createToken({uid: request.uid});
-    request.pipe(token);
-  } else {
-    response.statusCode = 404;
-    response.end();
-  }
-}).listen(8080);
+// var http = require('http');
+//
+// http.createServer(function(request, response) {
+//   request.on('error', function(err) {
+//     console.error(err);
+//     response.statusCode = 400;
+//     response.end();
+//   });
+//   response.on('error', function(err) {
+//     console.error(err);
+//   });
+//
+//   if (request.method === 'GET') {//request.url === ''
+//     var token = tokenGenerator.createToken({uid: request.uid});
+//     request.pipe(token);
+//   } else {
+//     response.statusCode = 404;
+//     response.end();
+//   }
+// }).listen(8080);
 
 //==========================
 
-virtualConsole.on("log", function (message) {
-  console.log("console.log called ->", message);
-});
-
-var document = jsdom.jsdom(undefined, {
-  virtualConsole: virtualConsole
-});
 
 var http = require('http');
 http.createServer(function(request, response) {
@@ -102,13 +92,6 @@ http.createServer(function(request, response) {
     response.setHeader('Content-Type', 'application/json');
     // Note: the 2 lines above could be replaced with this next one:
     // response.writeHead(200, {'Content-Type': 'application/json'})
-
-    // var responseBody = {
-    //   headers: headers,
-    //   method: method,
-    //   url: url,
-    //   body: body
-    // };
 
     response.write(JSON.stringify(responseBody));
     response.end();

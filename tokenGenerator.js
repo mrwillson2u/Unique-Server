@@ -1,7 +1,5 @@
 var FirebaseTokenGenerator = require("firebase-token-generator");
 var tokenGenerator = new FirebaseTokenGenerator(process.env.FIREBASE_SECRET);
-// var token = tokenGenerator.createToken({uid: "1", some: "arbitrary", data: "here"});
-
 
 var http = require('http');
 
