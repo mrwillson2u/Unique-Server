@@ -53,7 +53,7 @@ function processSite(data, ack) {
     console.log("Error getting hostname: " + err);
   }
 
-  ref.child(orderByKey().equalTo(convertedName).once("value", function(processedHostname) {
+  ref.child("websites").orderByKey().equalTo(convertedName).once("value", function(processedHostname) {
     if(processedHostname.val() === null) {
         processor({hostname: hostname, page: data.site}, ack);
     } else {
