@@ -16,7 +16,6 @@ ref.child("users").on("child_added", function(user) {
   // Start an envent listener waiting for websites to be added to the new user
   ref.child("users/" + user.key() + "/URLS").on("child_added", function(site) {
        // Limit the ammount of websites it tries to load at onw time to same memory usage and try to avoid hangups
-    console.log("GOT SITE: " + site.val());
     // q.push({user: user, site: site}, function() {
     //   console.log('Processed: ' + site.key());
     //
