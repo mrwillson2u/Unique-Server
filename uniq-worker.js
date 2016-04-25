@@ -52,23 +52,23 @@ function processSite(data, ack) {
   catch(err) {
     console.log("Error getting hostname: " + err);
   }
-  //
-  // ref.child(orderByKey().equalTo(convertedName).once("value", function(processedHostname) {
-  //   if(processedHostname.val() === null) {
-  //       processor({hostname: hostname, page: data.site}, ack);
-  //   } else {
-  //     ref.child("websites/" + convertedName + "/pages").orderByChild('page').equalTo(data.site.child('URL').val()).once("value", function(processedPage) {
-  //
-  //       if(processedPage.val() === null) {
-  //           processor({hostname: hostname, page: data.site}, ack);
-  //
-  //       } else {
-  //         // Already done
-  //         ack();
-  //       }
-  //     });
-  //   }
-  // });
+
+  ref.child(orderByKey().equalTo(convertedName).once("value", function(processedHostname) {
+    if(processedHostname.val() === null) {
+        processor({hostname: hostname, page: data.site}, ack);
+    } else {
+      ref.child("websites/" + convertedName + "/pages").orderByChild('page').equalTo(data.site.child('URL').val()).once("value", function(processedPage) {
+
+        if(processedPage.val() === null) {
+            processor({hostname: hostname, page: data.site}, ack);
+
+        } else {
+          // Already done
+          ack();
+        }
+      });
+    }
+  });
 
 }
 
