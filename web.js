@@ -21,6 +21,9 @@ var rabbit = jackrabbit(process.env.RABBIT_URL);
       //
       // });
 
+      console.log("Sending: ");
+      console.log(site.val());
+
       var exchange = rabbit.default();
       var jobMessage = exchange.queue({name: 'task_que', durable: 'true'});
       exchange.publish(newJob, {key: 'task_queue'});
