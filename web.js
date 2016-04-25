@@ -4,6 +4,7 @@ var tokenGenerator = new FirebaseTokenGenerator(process.env.FIREBASE_SECRET);
 var http = require('http');
 var jackrabbit = require('jackrabbit');
 
+var ref = new Firebase("https://unique-iq.firebaseio.com");
 
 var rabbit = jackrabbit(process.env.RABBIT_URL);
 
