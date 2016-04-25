@@ -1,4 +1,5 @@
 var jackrabbit = require('jackrabbit');
+var natural = require('natural');
 var stemmer = natural.PorterStemmer;
 var Firebase = require('firebase');
 var request = require('request');
@@ -60,22 +61,22 @@ var q = async.queue(function (task, asyncBack) {
       console.log("Error getting hostname: " + err);
     }
 
-    ref.child(orderByKey().equalTo(convertedName).once("value", function(processedHostname) {
-      if(processedHostname.val() === null) {
-          processor({hostname: hostname, page: task.site}, asyncBack);
-      } else {
-        ref.child("websites/" + convertedName + "/pages").orderByChild('page').equalTo(task.site.child('URL').val()).once("value", function(processedPage) {
-
-          if(processedPage.val() === null) {
-              processor({hostname: hostname, page: task.site}, asyncBack);
-
-          } else {
-            // Already done
-            asyncBack();
-          }
-        });
-      }
-    });
+    // ref.child(orderByKey().equalTo(convertedName).once("value", function(processedHostname) {
+    //   if(processedHostname.val() === null) {
+    //       processor({hostname: hostname, page: task.site}, asyncBack);
+    //   } else {
+    //     ref.child("websites/" + convertedName + "/pages").orderByChild('page').equalTo(task.site.child('URL').val()).once("value", function(processedPage) {
+    //
+    //       if(processedPage.val() === null) {
+    //           processor({hostname: hostname, page: task.site}, asyncBack);
+    //
+    //       } else {
+    //         // Already done
+    //         asyncBack();
+    //       }
+    //     });
+    //   }
+    // });
 
 }, 1);
 

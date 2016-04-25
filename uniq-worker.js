@@ -1,11 +1,12 @@
 var jackrabbit = require('jackrabbit');
+var natural = require('natural');
 var stemmer = natural.PorterStemmer;
 var Firebase = require('firebase');
 var request = require('request');
 var Tagger = require("brill-pos-tagger");
 var async = require('async');
 var readingTime = require('reading-time');
-var app = require('express').express();
+// var app = require('express').express();
 var http = require('http');
 var base_folder = "./node_modules/brill-pos-tagger/data/English/";
 var rules_file = base_folder + "tr_from_posjs.txt";
@@ -51,23 +52,23 @@ function processSite(data, ack) {
   catch(err) {
     console.log("Error getting hostname: " + err);
   }
-
-  ref.child(orderByKey().equalTo(convertedName).once("value", function(processedHostname) {
-    if(processedHostname.val() === null) {
-        processor({hostname: hostname, page: data.site}, ack);
-    } else {
-      ref.child("websites/" + convertedName + "/pages").orderByChild('page').equalTo(data.site.child('URL').val()).once("value", function(processedPage) {
-
-        if(processedPage.val() === null) {
-            processor({hostname: hostname, page: data.site}, ack);
-
-        } else {
-          // Already done
-          ack();
-        }
-      });
-    }
-  });
+  //
+  // ref.child(orderByKey().equalTo(convertedName).once("value", function(processedHostname) {
+  //   if(processedHostname.val() === null) {
+  //       processor({hostname: hostname, page: data.site}, ack);
+  //   } else {
+  //     ref.child("websites/" + convertedName + "/pages").orderByChild('page').equalTo(data.site.child('URL').val()).once("value", function(processedPage) {
+  //
+  //       if(processedPage.val() === null) {
+  //           processor({hostname: hostname, page: data.site}, ack);
+  //
+  //       } else {
+  //         // Already done
+  //         ack();
+  //       }
+  //     });
+  //   }
+  // });
 
 }
 
