@@ -8,7 +8,7 @@ var tokenGenerator = new FirebaseTokenGenerator(process.env.FIREBASE_SECRET);
 var ref = new Firebase("https://unique-iq.firebaseio.com");
 
 var rabbit = jackrabbit(process.env.RABBIT_URL);
-
+console.log("starting web...");
   // An event listener watching for new users added
 ref.child("users").on("child_added", function(user) {
   console.log("Listining for user: " + user.val());
