@@ -35,65 +35,97 @@ var processingQue = 0
 var downloading = false;
 
 var rabbit = jackrabbit(process.env.RABBIT_URL);
+var exchange = rabbit.default();
+var hello = exchange.queue({ name: 'task_queue', durable: true });
 
+hello.on('consume', processSite);
 
-rabbit
-  .default()
-  .queue({ name: 'hello' })
-  .consume(onMessage, { noAck: true });
+function processSite(data, ack) {
+  console.log("Processing: " + data.name);
+  //Check if we have processed this site already
+  console.log("task.site.child('URL').val(): " + data.site.child('URL').val());
+  var hostname = getHostName(data.site.child('URL').val());
+  console.log("hostname: " + hostname);
+
+  // Sometimes getHostName() cannot
+  try {
+    var convertedName = hostname.replace(/\./g, " ");
+  }
+  catch(err) {
+    console.log("Error getting hostname: " + err);
+  }
+
+  ref.child(orderByKey().equalTo(convertedName).once("value", function(processedHostname) {
+    if(processedHostname.val() === null) {
+        processor({hostname: hostname, page: data.site}, ack);
+    } else {
+      ref.child("websites/" + convertedName + "/pages").orderByChild('page').equalTo(data.site.child('URL').val()).once("value", function(processedPage) {
+
+        if(processedPage.val() === null) {
+            processor({hostname: hostname, page: data.site}, ack);
+
+        } else {
+          // Already done
+          ack();
+        }
+      });
+    }
+  });
+
+}
 
 function onMessage(data) {
   console.log('received:', data);
 }
+//
+// var q = async.queue(function (task, asyncBack) {
+//     //Check if we have processed this site already
+//     console.log("task.site.child('URL').val(): " + task.site.child('URL').val());
+//     var hostname = getHostName(task.site.child('URL').val());
+//     console.log("hostname: " + hostname);
+//
+//     // Sometimes getHostName() cannot
+//     try {
+//       var convertedName = hostname.replace(/\./g, " ");
+//     }
+//     catch(err) {
+//       console.log("Error getting hostname: " + err);
+//     }
+//
+//     ref.child(orderByKey().equalTo(convertedName).once("value", function(processedHostname) {
+//       if(processedHostname.val() === null) {
+//           processor({hostname: hostname, page: task.site}, asyncBack);
+//       } else {
+//         ref.child("websites/" + convertedName + "/pages").orderByChild('page').equalTo(task.site.child('URL').val()).once("value", function(processedPage) {
+//
+//           if(processedPage.val() === null) {
+//               processor({hostname: hostname, page: task.site}, asyncBack);
+//
+//           } else {
+//             // Already done
+//             asyncBack();
+//           }
+//         });
+//       }
+//     });
+//
+// }, 1);
 
-var q = async.queue(function (task, asyncBack) {
-    //Check if we have processed this site already
-    console.log("task.site.child('URL').val(): " + task.site.child('URL').val());
-    var hostname = getHostName(task.site.child('URL').val());
-    console.log("hostname: " + hostname);
-
-    // Sometimes getHostName() cannot
-    try {
-      var convertedName = hostname.replace(/\./g, " ");
-    }
-    catch(err) {
-      console.log("Error getting hostname: " + err);
-    }
-
-    ref.child(orderByKey().equalTo(convertedName).once("value", function(processedHostname) {
-      if(processedHostname.val() === null) {
-          processor({hostname: hostname, page: task.site}, asyncBack);
-      } else {
-        ref.child("websites/" + convertedName + "/pages").orderByChild('page').equalTo(task.site.child('URL').val()).once("value", function(processedPage) {
-
-          if(processedPage.val() === null) {
-              processor({hostname: hostname, page: task.site}, asyncBack);
-
-          } else {
-            // Already done
-            asyncBack();
-          }
-        });
-      }
-    });
-
-}, 1);
-
-
-var testVar = 0;
-// An event listener watching for new users added
-ref.child("users").on("child_added", function(user) {
-
-  // Start an envent listener waiting for websites to be added to the new user
-  ref.child("users/" + user.key() + "/URLS").on("child_added", function(site) {
-       // Limit the ammount of websites it tries to load at onw time to same memory usage and try to avoid hangups
-
-    q.push({user: user, site: site}, function() {
-      console.log('Processed: ' + site.key());
-
-    });
-  });
-});
+//
+// var testVar = 0;
+// // An event listener watching for new users added
+// ref.child("users").on("child_added", function(user) {
+//
+//   // Start an envent listener waiting for websites to be added to the new user
+//   ref.child("users/" + user.key() + "/URLS").on("child_added", function(site) {
+//        // Limit the ammount of websites it tries to load at onw time to same memory usage and try to avoid hangups
+//
+//     q.push({user: user, site: site}, function() {
+//       console.log('Processed: ' + site.key());
+//
+//     });
+//   });
+// });
 
 
 // Takes in URL then downloads and process the website

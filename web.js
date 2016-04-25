@@ -7,11 +7,24 @@ var jackrabbit = require('jackrabbit');
 
 var rabbit = jackrabbit(process.env.RABBIT_URL);
 
-rabbit
-  .default()
-  .publish('Hello World!', { key: 'hello' })
-  .on('drain', rabbit.close);
+  // An event listener watching for new users added
+  ref.child("users").on("child_added", function(user) {
 
+    // Start an envent listener waiting for websites to be added to the new user
+    ref.child("users/" + user.key() + "/URLS").on("child_added", function(site) {
+         // Limit the ammount of websites it tries to load at onw time to same memory usage and try to avoid hangups
+
+      // q.push({user: user, site: site}, function() {
+      //   console.log('Processed: ' + site.key());
+      //
+      // });
+
+      var exchange = rabbit.default();
+      var jobMessage = exchange.queue({name: 'task_que', durable: 'true'});
+      exchange.publish(newJob, {key: 'task_queue'});
+      exchange.on('drain', process.exit);
+    });
+  });
 
 http.createServer(function(request, response) {
   console.log("request method:");
