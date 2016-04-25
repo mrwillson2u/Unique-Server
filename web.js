@@ -10,26 +10,27 @@ var ref = new Firebase("https://unique-iq.firebaseio.com");
 var rabbit = jackrabbit(process.env.RABBIT_URL);
 
   // An event listener watching for new users added
-  ref.child("users").on("child_added", function(user) {
+ref.child("users").on("child_added", function(user) {
+  console.log("Listining for user: " + user.val());
 
-    // Start an envent listener waiting for websites to be added to the new user
-    ref.child("users/" + user.key() + "/URLS").on("child_added", function(site) {
-         // Limit the ammount of websites it tries to load at onw time to same memory usage and try to avoid hangups
+  // Start an envent listener waiting for websites to be added to the new user
+  ref.child("users/" + user.key() + "/URLS").on("child_added", function(site) {
+       // Limit the ammount of websites it tries to load at onw time to same memory usage and try to avoid hangups
+    console.log("GOT SITE: " + site.val());
+    // q.push({user: user, site: site}, function() {
+    //   console.log('Processed: ' + site.key());
+    //
+    // });
 
-      // q.push({user: user, site: site}, function() {
-      //   console.log('Processed: ' + site.key());
-      //
-      // });
+    console.log("Sending: ");
+    console.log(site.val());
 
-      console.log("Sending: ");
-      console.log(site.val());
-
-      var exchange = rabbit.default();
-      var jobMessage = exchange.queue({name: 'task_que', durable: 'true'});
-      exchange.publish(newJob, {key: 'task_queue'});
-      exchange.on('drain', process.exit);
-    });
+    var exchange = rabbit.default();
+    var jobMessage = exchange.queue({name: 'task_que', durable: 'true'});
+    exchange.publish(newJob, {key: 'task_queue'});
+    exchange.on('drain', process.exit);
   });
+});
 
 http.createServer(function(request, response) {
   console.log("request method:");

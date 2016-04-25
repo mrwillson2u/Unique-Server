@@ -12,9 +12,6 @@ var rules_file = base_folder + "tr_from_posjs.txt";
 var lexicon_file = base_folder + "lexicon_from_posjs.json";
 var default_category = 'N';
 
-var FirebaseTokenGenerator = require("firebase-token-generator");
-var tokenGenerator = new FirebaseTokenGenerator("<YOUR_FIREBASE_SECRET>");
-
 var fs = require('fs')
 var output = fs.createWriteStream('./stdout.log');
 var errorOutput = fs.createWriteStream('./stderr.log');
