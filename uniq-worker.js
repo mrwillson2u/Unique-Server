@@ -34,7 +34,7 @@ var downloading = false;
 
 var rabbit = jackrabbit(process.env.RABBIT_URL);
 var exchange = rabbit.default();
-var queuedSites = exchange.queue({'name': 'task_queue', 'durable': 'true' });
+var queuedSites = exchange.queue({name: 'task_queue', durable: true });
 
 console.log("starting worker...");
 queuedSites.consume(processSite);
@@ -45,8 +45,9 @@ function(data, ack) {
 }
 
 
-function processSite(data, ack) {
+function processSite(jsonData, ack) {
   console.log("Processing: ");
+  var data = JSON.parse();
   console.log(data);
   //Check if we have processed this site already
   console.log("task.site.child('URL').val(): " + data.site.child('URL').val());
