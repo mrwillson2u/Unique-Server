@@ -9,6 +9,8 @@ var ref = new Firebase("https://unique-iq.firebaseio.com");
 var rabbit = jackrabbit(process.env.RABBIT_URL);
 console.log("starting web...");
 console.log(ref);
+
+
 ref.authWithCustomToken(process.env.FIREBASE_SECRET, function(error, authData) {
   if (error) {
     console.log("Login Failed!", error);
@@ -22,6 +24,10 @@ ref.authWithCustomToken(process.env.FIREBASE_SECRET, function(error, authData) {
     //   });
     // });
       // An event listener watching for new users added
+    var exchange = rabbit.default();
+    var jobMessage = exchange.queue({name: 'task_queue', durable: 'true'});
+
+
     ref.child("users").on("child_added", function(user) {
       console.log("Listining for user: " + user.key());
 
@@ -36,8 +42,7 @@ ref.authWithCustomToken(process.env.FIREBASE_SECRET, function(error, authData) {
         console.log("Sending: ");
         console.log(site.val());
 
-        var exchange = rabbit.default();
-        var jobMessage = exchange.queue({name: 'task_que', durable: 'true'});
+
         exchange.publish(jobMessage, {key: 'task_queue'});
         exchange.on('drain', process.exit);
       });
