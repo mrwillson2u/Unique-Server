@@ -32,12 +32,13 @@ var processingQue = 0
 
 var downloading = false;
 
-var rabbit = jackrabbit(process.env.RABBIT_URL);
+var rabbit = jackrabbit(process.env.RABBIT_UR);
 var exchange = rabbit.default();
 var hello = exchange.queue({ name: 'task_queue', durable: true });
 
 hello.on('consume', processSite);
 console.log("starting worker...");
+
 function processSite(data, ack) {
   console.log("Processing: " + data.name);
   //Check if we have processed this site already

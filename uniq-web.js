@@ -4,31 +4,45 @@ var tokenGenerator = new FirebaseTokenGenerator(process.env.FIREBASE_SECRET);
 var http = require('http');
 var jackrabbit = require('jackrabbit');
 
-var tokenGenerator = new FirebaseTokenGenerator(process.env.FIREBASE_SECRET);
 var ref = new Firebase("https://unique-iq.firebaseio.com");
 
 var rabbit = jackrabbit(process.env.RABBIT_URL);
 console.log("starting web...");
-  // An event listener watching for new users added
-ref.child("users").on("child_added", function(user) {
-  console.log("Listining for user: " + user.val());
 
-  // Start an envent listener waiting for websites to be added to the new user
-  ref.child("users/" + user.key() + "/URLS").on("child_added", function(site) {
-       // Limit the ammount of websites it tries to load at onw time to same memory usage and try to avoid hangups
-    // q.push({user: user, site: site}, function() {
-    //   console.log('Processed: ' + site.key());
-    //
+ref.authWithCustomToken(process.env.FIREBASE_SECRET, function(error, authData) {
+  if (error) {
+    console.log("Login Failed!", error);
+  } else {
+    console.log("Login Succeeded!", authData);
+
+    // ref.once("value", function(user) {
+    //   console.log("Listining for user: " + user.val());
+    //   ref.child("users/" + user.key() + "/URLS").once("value", function(site) {
+    //     console.log(site.key());
+    //   });
     // });
+      // An event listener watching for new users added
+    ref.child("users").on("child_added", function(user) {
+      console.log("Listining for user: " + user.key());
 
-    console.log("Sending: ");
-    console.log(site.val());
+      // Start an envent listener waiting for websites to be added to the new user
+      ref.child("users/" + user.key() + "/URLS").on("child_added", function(site) {
+           // Limit the ammount of websites it tries to load at onw time to same memory usage and try to avoid hangups
+        // q.push({user: user, site: site}, function() {
+        //   console.log('Processed: ' + site.key());
+        //
+        // });
 
-    var exchange = rabbit.default();
-    var jobMessage = exchange.queue({name: 'task_que', durable: 'true'});
-    exchange.publish(newJob, {key: 'task_queue'});
-    exchange.on('drain', process.exit);
-  });
+        console.log("Sending: ");
+        console.log(site.val());
+
+        var exchange = rabbit.default();
+        var jobMessage = exchange.queue({name: 'task_que', durable: 'true'});
+        exchange.publish(jobMessage, {key: 'task_queue'});
+        exchange.on('drain', process.exit);
+      });
+    });
+  }
 });
 
 http.createServer(function(request, response) {
