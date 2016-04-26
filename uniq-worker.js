@@ -41,7 +41,8 @@ queuedSites.consume(processSite);
 
 
 function processSite(data, ack) {
-  console.log("Processing: " + data.name);
+  console.log("Processing: ");
+  console.log(data);
   //Check if we have processed this site already
   console.log("task.site.child('URL').val(): " + data.site.child('URL').val());
   var hostname = getHostName(data.site.child('URL').val());
