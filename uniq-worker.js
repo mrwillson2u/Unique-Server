@@ -39,10 +39,10 @@ var queuedSites = exchange.queue({name: 'task_queue', durable: true });
 console.log("starting worker...");
 queuedSites.consume(processSite);
 
-function(data, ack) {
-  console.log("got data: " + data);
-
-}
+// function(data, ack) {
+//   console.log("got data: " + data);
+//
+// }
 
 
 function processSite(jsonData, ack) {
