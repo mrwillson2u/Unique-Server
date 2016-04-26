@@ -34,10 +34,10 @@ var downloading = false;
 
 var rabbit = jackrabbit(process.env.RABBIT_UR);
 var exchange = rabbit.default();
-var hello = exchange.queue({ name: 'task_queue', durable: true });
+var sites = exchange.queue({ name: 'task_queue', durable: true });
 
 console.log("starting worker...");
-hello.on('consume', processSite);
+sites.consume(processSite);
 
 
 function processSite(data, ack) {
