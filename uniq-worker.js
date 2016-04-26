@@ -32,12 +32,12 @@ var processingQue = 0
 
 var downloading = false;
 
-var rabbit = jackrabbit(process.env.RABBIT_UR);
+var rabbit = jackrabbit(process.env.RABBIT_URL);
 var exchange = rabbit.default();
-var sites = exchange.queue({ name: 'task_queue', durable: true });
+var queuedSites = exchange.queue({ name: 'task_queue', durable: true });
 
 console.log("starting worker...");
-sites.consume(processSite);
+queuedSites.consume(processSite);
 
 
 function processSite(data, ack) {
