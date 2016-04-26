@@ -43,7 +43,7 @@ ref.authWithCustomToken(process.env.FIREBASE_SECRET, function(error, authData) {
         console.log(site.val());
 
 
-        exchange.publish({user: user, site: site}, {key: 'task_queue'});
+        exchange.publish("test", {key: 'task_queue'});
         exchange.on('drain', process.exit);
       });
     });
