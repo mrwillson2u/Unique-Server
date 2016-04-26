@@ -8,7 +8,7 @@ var ref = new Firebase("https://unique-iq.firebaseio.com");
 
 var rabbit = jackrabbit(process.env.RABBIT_URL);
 console.log("starting web...");
-
+console.log(ref);
 ref.authWithCustomToken(process.env.FIREBASE_SECRET, function(error, authData) {
   if (error) {
     console.log("Login Failed!", error);
