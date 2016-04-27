@@ -47,7 +47,8 @@ queuedSites.consume(processSite);
 
 function processSite(jsonData, ack) {
   console.log("Processing: ");
-  var data = JSON.parse();
+  var data = JSON.parse(jsonData);
+  data = data.replace(/\"([^(\")"]+)\":/g,"$1:");
   console.log(data);
   //Check if we have processed this site already
   console.log("task.site.child('URL').val(): " + data.site.child('URL').val());
