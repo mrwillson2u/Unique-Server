@@ -12,6 +12,7 @@ var base_folder = "./node_modules/brill-pos-tagger/data/English/";
 var rules_file = base_folder + "tr_from_posjs.txt";
 var lexicon_file = base_folder + "lexicon_from_posjs.json";
 var default_category = 'N';
+var JSONB = require('json-buffer')
 
 var fs = require('fs')
 var output = fs.createWriteStream('./stdout.log');
@@ -48,8 +49,9 @@ queuedSites.consume(processSite);
 function processSite(jsonData, ack) {
   console.log("Processing: ");
   console.log(jsonData);
+  //var str = JSONB.stringify(new Buffer('hello there!'))
 
-  var data = JSON.parse(jsonData.data.toJSON());
+  var data = JSON.parse(JSONB.stringify(new Buffer('hello there!')));
   data = data.replace(/\"([^(\")"]+)\":/g,"$1:");
   console.log(data);
   //Check if we have processed this site already
