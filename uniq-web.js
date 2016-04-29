@@ -3,6 +3,7 @@ var FirebaseTokenGenerator = require("firebase-token-generator");
 var tokenGenerator = new FirebaseTokenGenerator(process.env.FIREBASE_SECRET);
 var http = require('http');
 var jackrabbit = require('jackrabbit');
+var async = require('async');
 
 var ref = new Firebase("https://unique-iq.firebaseio.com");
 
@@ -38,21 +39,70 @@ ref.authWithCustomToken(process.env.FIREBASE_SECRET, function(error, authData) {
         //   console.log('Processed: ' + site.key());
         //
         // });
+        // site.forEach(function() {
+          // var siteKey = {};
+          // var userKey = {};
+          // //
+          // siteKey[site.key()] = site.val();
+          // userKey[user.key()] = user.val();
 
-        var siteJSON = JSON.stringify(eval("(" + site + ")"));
-        var userJSON = JSON.stringify(eval("(" + user + ")"));
+          // console.log("siteKey: ");
+          // console.log(site.val().toSource());
+          // console.log("userKey: ");
+          // console.log(eval("(" + user.val().toSource() + ")"));
 
-        console.log("Sending: ");
-        console.log(site.val());
-        var jsonData = JSON.stringify({"user": siteJSON, "site": userJSON});
-        console.log('jsonData: ');
-        console.log(jsonData);
-        exchange.publish(jsonData, {key: 'task_queue'});
-        exchange.on('drain', process.exit);
+          // var siteJSON = JSON.stringify(siteKey);
+          // var userJSON = JSON.stringify(userKey);
+
+
+          // console.log(siteJSON);
+          // console.log(site.val());
+          // console.log(userJSON);
+
+          // console.log("Sending: ");
+          // console.log(site.val());
+          // var jsonData = JSON.stringify({user: "test", site: "siteKey"});
+          // console.log('jsonData: ');
+          // console.log(jsonData);
+          // console.log(jsonData.length);
+          //
+          // var testThis = JSON.stringify({user: userKey, site: siteKey})
+          // console.log("testThis: " + testThis);
+          //const sendBytes = Buffer.from(testThis, 'utf8');
+          // console.log('sendBytes.length: ');
+          // for (var i = 0; i < jsonData.length; ++i) {
+          //   sendBytes.push(jsonData.charCodeAt(i));
+          // }
+
+          var queObj = {user: user, site: site};
+            q.push(queObj, function() {
+              console.log('Processed: ' + site.key());
+
+            });
+
+
+
+          // });
+        });
       });
-    });
-  }
+
+      var q = async.queue(function (task, asyncBack) {
+        var userKey = {};
+        userKey[task.user.key()] = task.user.val();
+        var siteKey = {};
+        siteKey[task.site.key()] = task.site.val();
+        exchange.publish(new Buffer(JSON.stringify({user: userKey, site: siteKey})), {key: "task_queue"});
+        console.log("test");
+        exchange.on('drain', process.exit);
+        async.setImmediate(function() {
+          asyncBack();
+        });
+      }, 1);
+    }
 });
+
+
+
 
 http.createServer(function(request, response) {
   console.log("request method:");
