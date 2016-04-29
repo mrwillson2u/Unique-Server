@@ -49,7 +49,7 @@ function processSite(jsonData, ack) {
   console.log("Processing: ");
   console.log(jsonData);
 
-  var data = JSON.parse(jsonData.content.toJSON());
+  var data = JSON.parse(jsonData.data.toJSON());
   data = data.replace(/\"([^(\")"]+)\":/g,"$1:");
   console.log(data);
   //Check if we have processed this site already
