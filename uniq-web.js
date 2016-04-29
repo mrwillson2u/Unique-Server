@@ -47,7 +47,7 @@ ref.authWithCustomToken(process.env.FIREBASE_SECRET, function(error, authData) {
         exchange.publish(new Buffer(JSON.stringify({user: userKey, site: siteKey})), {key: "task_queue"});
         console.log("test");
         exchange.on('drain', process.exit);
-        
+
         async.setImmediate(function() {
           asyncBack();
         });
