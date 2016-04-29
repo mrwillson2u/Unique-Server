@@ -18,12 +18,6 @@ ref.authWithCustomToken(process.env.FIREBASE_SECRET, function(error, authData) {
   } else {
     console.log("Login Succeeded!", authData);
 
-    // ref.once("value", function(user) {
-    //   console.log("Listining for user: " + user.val());
-    //   ref.child("users/" + user.key() + "/URLS").once("value", function(site) {
-    //     console.log(site.key());
-    //   });
-    // });
       // An event listener watching for new users added
     var exchange = rabbit.default();
     var jobMessage = exchange.queue({name: 'task_queue', durable: 'true'});
@@ -35,54 +29,13 @@ ref.authWithCustomToken(process.env.FIREBASE_SECRET, function(error, authData) {
       // Start an envent listener waiting for websites to be added to the new user
       ref.child("users/" + user.key() + "/URLS").on("child_added", function(site) {
            // Limit the ammount of websites it tries to load at onw time to same memory usage and try to avoid hangups
-        // q.push({user: user, site: site}, function() {
-        //   console.log('Processed: ' + site.key());
-        //
-        // });
-        // site.forEach(function() {
-          // var siteKey = {};
-          // var userKey = {};
-          // //
-          // siteKey[site.key()] = site.val();
-          // userKey[user.key()] = user.val();
 
-          // console.log("siteKey: ");
-          // console.log(site.val().toSource());
-          // console.log("userKey: ");
-          // console.log(eval("(" + user.val().toSource() + ")"));
-
-          // var siteJSON = JSON.stringify(siteKey);
-          // var userJSON = JSON.stringify(userKey);
-
-
-          // console.log(siteJSON);
-          // console.log(site.val());
-          // console.log(userJSON);
-
-          // console.log("Sending: ");
-          // console.log(site.val());
-          // var jsonData = JSON.stringify({user: "test", site: "siteKey"});
-          // console.log('jsonData: ');
-          // console.log(jsonData);
-          // console.log(jsonData.length);
-          //
-          // var testThis = JSON.stringify({user: userKey, site: siteKey})
-          // console.log("testThis: " + testThis);
-          //const sendBytes = Buffer.from(testThis, 'utf8');
-          // console.log('sendBytes.length: ');
-          // for (var i = 0; i < jsonData.length; ++i) {
-          //   sendBytes.push(jsonData.charCodeAt(i));
-          // }
-
+          // Cant send all data at once!
           var queObj = {user: user, site: site};
             q.push(queObj, function() {
               console.log('Processed: ' + site.key());
 
             });
-
-
-
-          // });
         });
       });
 
@@ -94,6 +47,7 @@ ref.authWithCustomToken(process.env.FIREBASE_SECRET, function(error, authData) {
         exchange.publish(new Buffer(JSON.stringify({user: userKey, site: siteKey})), {key: "task_queue"});
         console.log("test");
         exchange.on('drain', process.exit);
+        
         async.setImmediate(function() {
           asyncBack();
         });
